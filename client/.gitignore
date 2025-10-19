@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.vercel/
+.nuxt/
+.svelte-kit/
+.storybook-out/
+storybook-static/
+
+# Framework caches
+.vite/
+.next/cache/
+.angular/
+.cache/
+.parcel-cache/
+.turbo/
+.sass-cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing/coverage
+coverage/
+.nyc_output/
+cypress/videos/
+cypress/screenshots/
+playwright-report/
+test-results/
+
+# Tools
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE/editor
+.vscode/
+.idea/
+*.sw?
+*~
