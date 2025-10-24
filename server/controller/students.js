@@ -9,35 +9,46 @@ const path = require("path");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-// Configure multer for file upload
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/resumes/'); // Make sure this directory exists
-    },
-    filename: function (req, file, cb) {
-        // Create unique filename with timestamp
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'resume-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-
+// Use memoryStorage on serverless (no disk writes)
+const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
-    // Accept only PDF files
+    // Accept only PDF files (adjust if you want images/docs)
     if (file.mimetype === 'application/pdf') {
         cb(null, true);
     } else {
         cb(new Error('Only PDF files are allowed!'), false);
     }
 };
-
 const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    }
+    storage,
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
+
+// Helper to upload a Buffer to Cloudinary using upload_stream (no extra dependency)
+const { Readable } = require('stream');
+const uploadBufferToCloudinary = (buffer, options = {}) => {
+    options = Object.assign({ resource_type: 'auto' }, options);
+    return new Promise((resolve, reject) => {
+        try {
+            const uploadStream = cloudinary.uploader.upload_stream(options, (err, result) => {
+                if (err) {
+                    console.error('Cloudinary upload error:', err);
+                    return reject(err);
+                }
+                resolve(result);
+            });
+            const read = new Readable();
+            read._read = () => {}; // noop
+            read.push(buffer);
+            read.push(null);
+            read.pipe(uploadStream);
+        } catch (e) {
+            console.error('uploadBufferToCloudinary exception:', e);
+            reject(e);
+        }
+    });
+};
 
 // Helper function to generate JWT token
 const generateToken = (userId, role, isProfileCompleted) => {
@@ -112,6 +123,7 @@ const getUserProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
     let tempPath;
     try {
+        console.log("function call toh ho rha hain:", req.file);
         const userId = req.user.id;
         const { name, rollNo, semester, course, graduationYear, oldPassword, newPassword } = req.body;
 
@@ -143,10 +155,9 @@ const updateProfile = async (req, res) => {
         if (course !== undefined) student.details.course = course;
         if (graduationYear !== undefined) student.details.graduationYear = graduationYear;
 
-        // Handle resume upload if file provided
-        if (req.file && req.file.path) {
-            tempPath = req.file.path;
-
+        // Handle resume upload if file provided (memory buffer)
+        if (req.file && req.file.buffer) {
+            console.log('uploading resume:', req.file.originalname, 'size=', req.file.buffer.length, 'mimetype=', req.file.mimetype);
             // Delete previous resume from Cloudinary if exists
             if (student.defaultResume) {
                 const { publicId, resourceType } = getCloudinaryId(student.defaultResume);
@@ -154,16 +165,15 @@ const updateProfile = async (req, res) => {
                     try {
                         await cloudinary.uploader.destroy(publicId, { resource_type: resourceType || 'raw' });
                     } catch {
-                        // Ignore Cloudinary deletion errors
+                        // ignore
                     }
                 }
             }
-
-            // Upload new resume to Cloudinary
-            const uploadResult = await cloudinary.uploader.upload(tempPath, {
+            const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
                 folder: 'placement/resumes',
                 resource_type: 'raw'
             });
+            console.log("Resume uploaded to Cloudinary:", uploadResult.secure_url);
             student.defaultResume = uploadResult.secure_url;
         }
 
@@ -204,12 +214,9 @@ const updateProfile = async (req, res) => {
             error: error.message
         });
     } finally {
-        if (tempPath) {
-            try { await fs.unlink(tempPath); } catch {}
-        }
+        // no disk temp to cleanup when using memoryStorage
     }
 };
-
 
 
 
@@ -268,7 +275,7 @@ const applyToCompany = async (req, res) => {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
 
-  let tempFilePath = req.file?.path;
+  let tempFilePath = req.file?.path; // kept for backward compatibility if ever used
 
   try {
     const company = await Company.findById(companyId);
@@ -288,10 +295,16 @@ const applyToCompany = async (req, res) => {
 
     // Decide resume URL: upload file to Cloudinary if present; else use defaultResume
     let resumeUrl;
-    if (tempFilePath) {
+    if (req.file?.buffer) {
+      const upload = await uploadBufferToCloudinary(req.file.buffer, {
+        folder: 'placement/resumes',
+        resource_type: 'auto'
+      });
+      resumeUrl = upload.secure_url;
+    } else if (tempFilePath) {
       const upload = await cloudinary.uploader.upload(tempFilePath, {
         folder: 'placement/resumes',
-        resource_type: 'auto' // supports pdf/doc/image
+        resource_type: 'auto'
       });
       resumeUrl = upload.secure_url;
     } else if (student.defaultResume) {
@@ -325,11 +338,11 @@ const applyToCompany = async (req, res) => {
     console.error("Error applying to company:", error);
     return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
   } finally {
-    // Clean up local temp file if multer stored one
-    if (tempFilePath) {
-      try { await fs.unlink(tempFilePath); } catch {}
-    }
-  }
+      // nothing to cleanup for memory uploads
+      if (tempFilePath) {
+        try { await fs.unlink(tempFilePath); } catch {}
+      }
+   }
 };
 
 // Get student's applications
@@ -386,7 +399,7 @@ const updateDefaultResume = async (req, res) => {
     try {
         const studentId = req.user.id;
 
-        if (!req.file?.path) {
+        if (!req.file?.path && !req.file?.buffer) {
             return res.status(400).json({
                 success: false,
                 message: "Please upload a resume file"
@@ -425,11 +438,19 @@ const updateDefaultResume = async (req, res) => {
             }
         }
 
-        // Upload new resume
-        const uploadResult = await cloudinary.uploader.upload(tempPath, {
-            folder: 'placement/resumes',
-            resource_type: 'raw'
-        });
+        // Upload new resume (buffer preferred)
+        let uploadResult;
+        if (req.file?.buffer) {
+            uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
+                folder: 'placement/resumes',
+                resource_type: 'raw'
+            });
+        } else {
+            uploadResult = await cloudinary.uploader.upload(tempPath, {
+                folder: 'placement/resumes',
+                resource_type: 'raw'
+            });
+        }
 
         student.defaultResume = uploadResult.secure_url;
         student.profileIsCompleted = checkProfileCompletion(student);
@@ -448,6 +469,7 @@ const updateDefaultResume = async (req, res) => {
             error: error.message
         });
     } finally {
+        // nothing to cleanup for memory uploads; keep old disk cleanup just in case
         if (tempPath) {
             try { await fs.unlink(tempPath); } catch {}
         }

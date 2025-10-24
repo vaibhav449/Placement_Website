@@ -30,18 +30,26 @@ const registerStudentsFromFile = async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
-
-        const filePath = req.file.path;
         const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
-        
+        const isBuffer = !!req.file.buffer;
+        const filePath = req.file.path; // may be undefined with memoryStorage
+
         let studentsData = [];
 
         if (fileExtension === 'csv') {
-            // Parse CSV file
-            studentsData = await parseCSVFile(filePath);
+            // Parse CSV file (support buffer or path)
+            if (isBuffer) {
+                studentsData = await parseCSVBuffer(req.file.buffer);
+            } else {
+                studentsData = await parseCSVFile(filePath);
+            }
         } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
-            // Parse Excel file
-            studentsData = parseExcelFile(filePath);
+            // Parse Excel file (support buffer)
+            if (isBuffer) {
+                studentsData = parseExcelBuffer(req.file.buffer);
+            } else {
+                studentsData = parseExcelFile(filePath);
+            }
         } else {
             return res.status(400).json({ error: 'Unsupported file format. Please upload CSV or Excel file.' });
         }
@@ -120,8 +128,10 @@ const registerStudentsFromFile = async (req, res) => {
             }
         }
 
-        // Clean up uploaded file
-        fs.unlinkSync(filePath);
+        // If disk path exists, remove it. If using memoryStorage there's nothing to unlink.
+        if (filePath) {
+            try { fs.unlinkSync(filePath); } catch {}
+        }
 
         res.status(200).json({
             message: 'Student registration process completed',
@@ -589,6 +599,68 @@ const downloadFilteredResumesZip = async (req, res) => {
         console.error('Error downloading filtered resumes:', error.stack || error);
         res.status(500).json({ error: 'Failed to download resumes.' });
     }
+};
+
+// Parse CSV from Buffer
+const parseCSVBuffer = (buffer) => {
+    return new Promise((resolve, reject) => {
+        const results = [];
+        const streamifier = require('streamifier');
+        streamifier.createReadStream(buffer)
+            .pipe(csv())
+            .on('data', (data) => results.push(data))
+            .on('end', () => resolve(results))
+            .on('error', (error) => reject(error));
+    });
+};
+
+// Parse Excel from Buffer
+const parseExcelBuffer = (buffer) => {
+    const workbook = xlsx.read(buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const rawRows = xlsx.utils.sheet_to_json(worksheet, { defval: '' });
+    // reuse the existing pick/normalization mapping code by reconstructing same mapping logic:
+    // (copy of code used in parseExcelFile's mapping)
+    const pick = (raw, candidates = []) => {
+        for (const c of candidates) {
+            const key = Object.keys(raw).find(k => k && k.toString().trim().toLowerCase() === c.toString().trim().toLowerCase());
+            if (key && raw[key] !== '') return String(raw[key]).trim();
+        }
+        const normMap = Object.keys(raw).reduce((acc, k) => {
+            acc[k.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '')] = raw[k];
+            return acc;
+        }, {});
+        for (const c of candidates) {
+            const nc = c.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (nc && normMap[nc] !== undefined && normMap[nc] !== '') return String(normMap[nc]).trim();
+        }
+        return '';
+    };
+
+    return rawRows.map(raw => {
+        const name = pick(raw, ['name', 'full name', 'student name']);
+        const email = pick(raw, ['email', 'e-mail', 'mail']);
+        const rollNo = pick(raw, ['rollNo', 'roll no', 'roll', 'roll_number', 'rollno']);
+        const roleRaw = pick(raw, ['role']);
+        const role = (roleRaw || 'student').toString().trim().toLowerCase();
+        const semester = pick(raw, ['semester', 'sem']);
+        const course = pick(raw, ['course']);
+        const graduationYearRaw = pick(raw, ['graduationYear', 'graduation year', 'graduation_year', 'graduation']);
+        const graduationYear = graduationYearRaw ? parseInt(graduationYearRaw, 10) || null : null;
+        const defaultResume = pick(raw, ['defaultResume', 'resume']);
+
+        return {
+            name,
+            email,
+            rollNo,
+            role,
+            semester,
+            course,
+            graduationYear,
+            defaultResume
+        };
+    });
 };
 
 // Helper function to parse CSV file

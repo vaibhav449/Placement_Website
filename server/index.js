@@ -14,18 +14,22 @@ const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
-// Create uploads directory if it doesn't exist
+// Create uploads directory in development only (avoid writing to read-only serverless fs)
+// If you need local uploads during development set NODE_ENV=development or ENABLE_LOCAL_UPLOADS=true
 const uploadsDir = path.join(process.cwd(), 'uploads', 'resumes');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+if (process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_UPLOADS === 'true') {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  // Serve uploaded files statically only in development/local mode
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+} else {
+  
 }
 
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve uploaded files statically
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.get('/', (req, res) => {
   res.send('API is running...');
