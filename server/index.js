@@ -24,10 +24,10 @@ if (process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_UPLOADS =
   // Serve uploaded files statically only in development/local mode
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 } else {
-  
+
 }
 
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: "https://placement-website-ozbc.vercel.app" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
