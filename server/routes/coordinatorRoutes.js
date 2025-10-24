@@ -2,7 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' }); // store temp uploads in server/uploads
+// Replace disk storage with memory storage
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// Example route using upload.single('file') and uploading buffer to Cloudinary
+const cloudinary = require('cloudinary').v2;
 
 const {
     registerStudentsFromFile,
@@ -37,5 +42,23 @@ router.get('/resumes/download/:id', downloadCompanyResumesZip);
 router.get('/resumes/download', require('../controller/coordinators').downloadFilteredResumesZip);
 router.put('/promote', makeStudentCoordinator);
 router.get("/students", getAllStudents);
+router.post('/upload', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).send('No file uploaded');
+        const streamifier = require('streamifier');
+
+        const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: 'placement/resumes' },
+            (error, result) => {
+                if (error) return res.status(500).json({ error });
+                return res.json(result);
+            }
+        );
+
+        streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 module.exports = router;
