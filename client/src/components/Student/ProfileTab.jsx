@@ -810,7 +810,7 @@ const ProfileTab = ({ user, showToast, onProfileUpdate }) => {
       if (resumeFile) {
         updateData.append('resume', resumeFile)
       }
-
+      // console.log("Updating profile with data:", updateData)
       await studentAPI.updateProfile(updateData)
       showToast('Profile updated successfully! 🎉', 'success')
       setShowUpdateModal(false)

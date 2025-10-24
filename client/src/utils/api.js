@@ -228,7 +228,9 @@ export const authAPI = {
 // Student APIs
 export const studentAPI = {
   getProfile: () => api.get('/students/profile'),
-  updateProfile: (data) => api.put('/students/profile', data),
+  updateProfile: (data) => api.put('/students/profile', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  } ),
   completeProfile: (formData) => api.post('/students/profile/complete', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
