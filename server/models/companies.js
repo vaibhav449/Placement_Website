@@ -6,37 +6,29 @@ const companySchema = new mongoose.Schema({
         required: true
     },
     description: {
-        type: String,
-        required: true
+        type: String
     },
     package: {
-        type: Number,
-        required: true
+        type: Number
     },
     skills: [{
-        type: String,
-        required: true
+        type: String
     }],
     requirements: {
-        type: String,
-        required: true
+        type: String
     },
     deadline: {
-        type: Date,
-        required: true
+        type: Date
     },
     role: {
-        type: String,
-        required: true
+        type: String
     },
     type: {
         type: String,
-        enum: ["Remote", "Onsite", "Hybrid"],
-        required: true
+        enum: ["Remote", "Onsite", "Hybrid"]
     },
     requiredCgpa: {
         type: Number,
-        required: true,
         default: 0.0
     },
     applyLink: {
@@ -45,7 +37,6 @@ const companySchema = new mongoose.Schema({
     },
     isOnCampus: {
         type: Boolean,
-        required: true,
         default: false
     }
 });

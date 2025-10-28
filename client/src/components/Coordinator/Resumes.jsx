@@ -1,18 +1,64 @@
-import React from 'react' 
+import React from 'react'
 import { useState } from 'react'
 import { coordinatorAPI } from '../../utils/api'
 import { downloadFile } from '../../utils/helpers'
-
+import { useEffect } from 'react'
 const Resumes = ({ students, companies, showToast }) => {
   const [batchFilter, setBatchFilter] = useState('all')
   const [companyFilter, setCompanyFilter] = useState('all')
   const [loading, setLoading] = useState(false)
+  const [applications, setApplications] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState(students);
+  const [filteredApplications, setFilteredApplications] = useState(applications);
+  // console.log("companies in resumes component:-",companies)
+  // ask backend to send all the applications
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const response = await coordinatorAPI.getAllApplications();
+        console.log("applications in resumes component:-", response.applications)
+        setApplications(response.applications);
+      } catch (error) {
+        console.error('Error fetching applications:', error);
+      }
+    }
+    fetchApplications();
+  }, []);
 
-  const filteredStudents = students.filter(student => {
-    if (batchFilter !== 'all' && student.details?.year !== batchFilter) return false
-    return true
-  })
+  useEffect(() => {
+  console.log("ran again");
 
+  const filtered = applications.filter(application => {
+    const email = application.userEmail || "";
+    const company = application.companyId || "";
+    console.log("email:", email, "company:", company, "batchFilter:", batchFilter, "companyFilter:", companyFilter);
+    // Extract last two digits of the year
+    const yearSuffix = batchFilter !== 'all' ? batchFilter.toString().slice(-2) : null;
+    console.log("yearSuffix:", yearSuffix);
+    // Batch filter check
+    const matchesBatch = batchFilter === 'all' || email.includes(yearSuffix);
+
+    // Company filter check (case-insensitive + trimmed)
+    const matchesCompany =
+      companyFilter === 'all' ||
+      company.toLowerCase().trim() === companyFilter.toLowerCase().trim();
+
+    return matchesBatch && matchesCompany;
+  });
+
+  setFilteredApplications(filtered);
+  console.log("filtered applications:-", filtered);
+}, [applications, batchFilter, companyFilter]);
+
+  useEffect(() => {
+    const filtered = students.filter(student => {
+      if (batchFilter !== 'all' && student.details?.year !== batchFilter) return false;
+      if (companyFilter !== 'all' && !student.companies?.includes(companyFilter)) return false;
+      return true;
+    });
+    setFilteredStudents(filtered);
+  }, [students, batchFilter, companyFilter]);
+  console.log("resumes coordinator component mai  companies:-", companies)
   const handleDownloadAll = async () => {
     setLoading(true)
     try {
@@ -38,7 +84,7 @@ const Resumes = ({ students, companies, showToast }) => {
           </h1>
           <p className="text-gray-400">Download and manage student resumes</p>
         </div>
-        <button 
+        <button
           onClick={handleDownloadAll}
           disabled={loading}
           className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-xl px-6 py-3 flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-orange-500/50 hover:scale-105 disabled:cursor-not-allowed disabled:scale-100"
@@ -79,13 +125,13 @@ const Resumes = ({ students, companies, showToast }) => {
           >
             <option value="all">All Companies</option>
             {companies.map(company => (
-              <option key={company._id} value={company._id}>{company.name}</option>
+              <option key={company._id} value={company._id}>{company.title}</option>
             ))}
           </select>
         </div>
       </div>
 
-      {filteredStudents.length === 0 ? (
+      {filteredApplications.length === 0 ? (
         <div className="text-center py-20 bg-gray-800/30 rounded-2xl border border-gray-700/50">
           <i className="fas fa-file-alt text-6xl text-gray-600 mb-4"></i>
           <p className="text-xl text-gray-400">No resumes found</p>
@@ -96,7 +142,7 @@ const Resumes = ({ students, companies, showToast }) => {
             <table className="w-full">
               <thead className="bg-gray-800/50">
                 <tr>
-                  {['Student Name', 'Batch', 'Course', 'Resume'].map(header => (
+                  {['Student Name', 'Email', 'Company', 'Status'].map(header => (
                     <th key={header} className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
                       {header}
                     </th>
@@ -104,7 +150,7 @@ const Resumes = ({ students, companies, showToast }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700/50">
-                {filteredStudents.map(student => (
+                {/* {filteredStudents.map(student => (
                   <tr key={student.id} className="hover:bg-gray-700/30 transition-colors duration-200">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
@@ -135,6 +181,58 @@ const Resumes = ({ students, companies, showToast }) => {
                         <span className="text-gray-500 italic">Not available</span>
                       )}
                     </td>
+                  </tr>
+                ))} */}
+                {filteredApplications.map(application => (
+                  <tr
+                    key={application._id}
+                    className="hover:bg-gray-700/30 transition-colors duration-200"
+                  >
+                    {/* Student Name + Avatar */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold">
+                            {application.userName.charAt(0)}
+                          </span>
+                        </div>
+                        <span className="font-medium text-white">{application.userName}</span>
+                      </div>
+                    </td>
+
+                    {/* Email */}
+                    <td className="px-6 py-4 text-gray-300">
+                      {application.userEmail}
+                    </td>
+
+                    {/* Company Name */}
+                    <td className="px-6 py-4">
+                      <span className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm font-medium">
+                        {application.companyName}
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-6 py-4 text-gray-300">
+                      {application.status}
+                    </td>
+
+                    {/* Resume Link */}
+                    {/* <td className="px-6 py-4">
+      {application.resume ? (
+        <a
+          href={application.resume}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center space-x-2 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 px-4 py-2 rounded-lg transition-all duration-200"
+        >
+          <i className="fas fa-eye"></i>
+          <span>View</span>
+        </a>
+      ) : (
+        <span className="text-gray-500 italic">Not available</span>
+      )}
+    </td> */}
                   </tr>
                 ))}
               </tbody>

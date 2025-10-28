@@ -150,6 +150,7 @@ const registerStudentsFromFile = async (req, res) => {
 // Create a new company for placement
 const createCompany = async (req, res) => {
     try {
+        console.log("Creating company with data:", req.body);
         const {
             title,
             description,
@@ -164,65 +165,54 @@ const createCompany = async (req, res) => {
             isOnCampus
         } = req.body;
 
-        // Validate required fields
-        if (
-            !title ||
-            !description ||
-            !pkg ||
-            !skills ||
-            !requirements ||
-            !deadline ||
-            !role ||
-            !type ||
-            requiredCgpa === undefined ||
-            !applyLink ||
-            isOnCampus === undefined
-        ) {
+        // Only title and applyLink are required
+        if (!title || !applyLink) {
             return res.status(400).json({
-                error: 'Missing required fields: title, description, package, skills, requirements, deadline, role, type, requiredCgpa, applyLink, isOnCampus are required.'
+                error: 'Missing required fields: title and applyLink are required.'
             });
         }
 
-        // Validate type enum
+        // Validate type enum if provided
         if (type && !['Remote', 'Onsite', 'Hybrid'].includes(type)) {
             return res.status(400).json({
                 error: 'Invalid type. Must be one of: Remote, Onsite, Hybrid'
             });
         }
 
-        // Validate package
-        if (isNaN(pkg) || pkg < 0) {
+        // Validate package if provided
+        if (pkg !== undefined && pkg !== '' && (isNaN(pkg) || pkg < 0)) {
             return res.status(400).json({
                 error: 'Package must be a positive number'
             });
         }
 
-        // Validate requiredCgpa
-        if (isNaN(requiredCgpa) || requiredCgpa < 0 || requiredCgpa > 10) {
+        // Validate requiredCgpa if provided
+        if (requiredCgpa !== undefined && requiredCgpa !== '' && (isNaN(requiredCgpa) || requiredCgpa < 0 || requiredCgpa > 10)) {
             return res.status(400).json({
                 error: 'requiredCgpa must be a number between 0 and 10'
             });
         }
 
-        // Validate skills
-        if (!Array.isArray(skills) || skills.length === 0) {
-            return res.status(400).json({
-                error: 'Skills must be a non-empty array'
-            });
+        // Validate skills if provided
+        let skillsArray = [];
+        if (skills !== undefined) {
+            if (!Array.isArray(skills)) {
+                return res.status(400).json({
+                    error: 'Skills must be an array'
+                });
+            }
+            skillsArray = skills.map(s => s.trim());
         }
 
-        // Validate applyLink
-        if (typeof applyLink !== 'string' || !applyLink.trim()) {
-            return res.status(400).json({
-                error: 'applyLink must be a non-empty string'
-            });
-        }
-
-        // Validate isOnCampus
-        if (typeof isOnCampus !== 'boolean') {
-            return res.status(400).json({
-                error: 'isOnCampus must be a boolean'
-            });
+        // Validate isOnCampus if provided
+        let isOnCampusValue = false;
+        if (isOnCampus !== undefined) {
+            if (typeof isOnCampus !== 'boolean') {
+                return res.status(400).json({
+                    error: 'isOnCampus must be a boolean'
+                });
+            }
+            isOnCampusValue = isOnCampus;
         }
 
         // Check if company already exists by title
@@ -233,20 +223,20 @@ const createCompany = async (req, res) => {
             });
         }
 
-        // Create company object
+        // Create company object (only set fields if provided)
         const companyData = {
             title: title.trim(),
-            description: description.trim(),
-            package: parseFloat(pkg),
-            skills: skills.map(s => s.trim()),
-            requirements: requirements.trim(),
-            deadline: new Date(deadline),
-            role: role.trim(),
-            type,
-            requiredCgpa: parseFloat(requiredCgpa),
-            applyLink: applyLink.trim(),
-            isOnCampus: Boolean(isOnCampus)
+            applyLink: applyLink.trim()
         };
+        if (description !== undefined && description !== '') companyData.description = description.trim();
+        if (pkg !== undefined && pkg !== '') companyData.package = parseFloat(pkg);
+        if (skills !== undefined) companyData.skills = skillsArray;
+        if (requirements !== undefined && requirements !== '') companyData.requirements = requirements.trim();
+        if (deadline !== undefined && deadline !== '') companyData.deadline = new Date(deadline);
+        if (role !== undefined && role !== '') companyData.role = role.trim();
+        if (type !== undefined && type !== '') companyData.type = type;
+        if (requiredCgpa !== undefined && requiredCgpa !== '') companyData.requiredCgpa = parseFloat(requiredCgpa);
+        companyData.isOnCampus = isOnCampusValue;
 
         // Save company to database
         const newCompany = new Company(companyData);
@@ -541,104 +531,212 @@ const downloadCompanyResumesZip = async (req, res) => {
 };
 
 // Download resumes based on filters (batch and/or company)
+// const downloadFilteredResumesZip = async (req, res) => {
+//     try {
+//         const { batch, company } = req.query;
+//         console.log('Download filtered resumes for batch:', batch, 'company:', company);
+
+//         let resumePublicIds = [];
+
+//         if (!batch && !company) {
+//             const students = await Student.find({ defaultResume: { $exists: true, $ne: '' } }).select('defaultResume');
+//             for (const student of students) {
+//                 if (!student.defaultResume) continue;
+//                 const { publicId } = getCloudinaryId(student.defaultResume);
+//                 // Only push if publicId is valid and not empty
+//                 if (publicId && publicId.startsWith('placement/resumes')) {
+//                     resumePublicIds.push(publicId);
+//                 }
+//             }
+//             // Remove duplicates and empty IDs
+//             resumePublicIds = resumePublicIds.filter(Boolean);
+//         } else {
+//             let studentFilter = {};
+//             if (batch) studentFilter['details.year'] = batch;
+
+//             let studentIds = [];
+//             if (batch) {
+//                 const students = await Student.find(studentFilter).select('_id');
+//                 studentIds = students.map(s => s._id);
+//             }
+
+//             let appFilter = {};
+//             if (company) appFilter.companyId = company;
+//             if (studentIds.length > 0) appFilter.studentId = { $in: studentIds };
+
+//             const applications = await Application.find(appFilter).select('resume');
+//             for (const app of applications) {
+//                 if (!app.resume) continue;
+//                 const { publicId } = getCloudinaryId(app.resume);
+//                 if (publicId && publicId.startsWith('placement/resumes')) {
+//                     resumePublicIds.push(publicId);
+//                 }
+//             }
+//         }
+
+//         if (!resumePublicIds.length) {
+//             console.error('No valid resumes found for download.');
+//             return res.status(404).json({ error: 'No valid resumes found.' });
+//         }
+
+//         // Generate Cloudinary ZIP URL
+//         let zipUrl;
+//         try {
+//             // Helper to check if a publicId exists in Cloudinary
+//             async function cloudinaryExists(publicId) {
+//                 try {
+//                     const result = await cloudinary.api.resource(publicId + '.pdf', { resource_type: 'raw' });
+//                     return !!result;
+//                 } catch (err) {
+//                     return false;
+//                 }
+//             }
+
+//             const validResumePublicIds = [];
+//             for (const publicId of resumePublicIds) {
+//                 if (await cloudinaryExists(publicId)) {
+//                     validResumePublicIds.push(publicId + '.pdf');
+//                 }
+//             }
+
+//             zipUrl = await cloudinary.utils.download_zip_url({
+//                 public_ids: validResumePublicIds,
+//                 resource_type: 'raw',
+//                 target_public_id: 'placement/filtered_resumes'
+//             });
+//         } catch (cloudErr) {
+//             console.error('Cloudinary ZIP generation error:', cloudErr);
+//             return res.status(500).json({ error: 'Failed to generate ZIP from Cloudinary.' });
+//         }
+
+//         // Proxy the ZIP file as a blob
+//         let response;
+//         try {
+//             response = await fetch(zipUrl);
+//         } catch (fetchErr) {
+//             console.error('Fetch error:', fetchErr);
+//             return res.status(500).json({ error: 'Failed to fetch ZIP from Cloudinary.' });
+//         }
+//         if (!response.ok) {
+//             console.error('Cloudinary responded with error:', await response.text());
+//             return res.status(500).json({ error: 'Failed to fetch ZIP from Cloudinary.' });
+//         }
+//         res.setHeader('Content-Disposition', 'attachment; filename="resumes.zip"');
+//         res.setHeader('Content-Type', 'application/zip');
+//         response.body.pipe(res);
+//     } catch (error) {
+//         console.error('Error downloading filtered resumes:', error.stack || error);
+//         res.status(500).json({ error: 'Failed to download resumes.' });
+//     }
+// };
+
 const downloadFilteredResumesZip = async (req, res) => {
-    try {
-        const { batch, company } = req.query;
-        console.log('Download filtered resumes for batch:', batch, 'company:', company);
+  try {
+    const { batch, company } = req.query;
+    console.log('Download filtered resumes for batch:', batch, 'company:', company);
 
-        let resumePublicIds = [];
+    let resumePublicIds = [];
 
-        if (!batch && !company) {
-            const students = await Student.find({ defaultResume: { $exists: true, $ne: '' } }).select('defaultResume');
-            for (const student of students) {
-                if (!student.defaultResume) continue;
-                const { publicId } = getCloudinaryId(student.defaultResume);
-                // Only push if publicId is valid and not empty
-                if (publicId && publicId.startsWith('placement/resumes')) {
-                    resumePublicIds.push(publicId);
-                }
-            }
-            // Remove duplicates and empty IDs
-            resumePublicIds = resumePublicIds.filter(Boolean);
-        } else {
-            let studentFilter = {};
-            if (batch) studentFilter['details.year'] = batch;
-
-            let studentIds = [];
-            if (batch) {
-                const students = await Student.find(studentFilter).select('_id');
-                studentIds = students.map(s => s._id);
-            }
-
-            let appFilter = {};
-            if (company) appFilter.companyId = company;
-            if (studentIds.length > 0) appFilter.studentId = { $in: studentIds };
-
-            const applications = await Application.find(appFilter).select('resume');
-            for (const app of applications) {
-                if (!app.resume) continue;
-                const { publicId } = getCloudinaryId(app.resume);
-                if (publicId && publicId.startsWith('placement/resumes')) {
-                    resumePublicIds.push(publicId);
-                }
-            }
+    if (!batch && !company) {
+      const students = await Student.find({ defaultResume: { $exists: true, $ne: '' } })
+        .select('defaultResume');
+      for (const student of students) {
+        if (!student.defaultResume) continue;
+        const { publicId } = getCloudinaryId(student.defaultResume);
+        if (publicId && publicId.startsWith('placement/resumes')) {
+          resumePublicIds.push(publicId); // NOTE: no ".pdf"
         }
+      }
+    } else {
+      const studentFilter = {};
+      if (batch) studentFilter['details.year'] = batch;
 
-        if (!resumePublicIds.length) {
-            console.error('No valid resumes found for download.');
-            return res.status(404).json({ error: 'No valid resumes found.' });
+      let studentIds = [];
+      if (batch) {
+        const students = await Student.find(studentFilter).select('_id');
+        studentIds = students.map(s => s._id);
+      }
+
+      const appFilter = {};
+      if (company) appFilter.companyId = company;
+      if (studentIds.length > 0) appFilter.studentId = { $in: studentIds };
+
+      const applications = await Application.find(appFilter).select('resume');
+      for (const app of applications) {
+        if (!app.resume) continue;
+        const { publicId } = getCloudinaryId(app.resume);
+        if (publicId && publicId.startsWith('placement/resumes')) {
+          resumePublicIds.push(publicId); // NOTE: no ".pdf"
         }
-
-        // Generate Cloudinary ZIP URL
-        let zipUrl;
-        try {
-            // Helper to check if a publicId exists in Cloudinary
-            async function cloudinaryExists(publicId) {
-                try {
-                    const result = await cloudinary.api.resource(publicId + '.pdf', { resource_type: 'raw' });
-                    return !!result;
-                } catch (err) {
-                    return false;
-                }
-            }
-
-            const validResumePublicIds = [];
-            for (const publicId of resumePublicIds) {
-                if (await cloudinaryExists(publicId)) {
-                    validResumePublicIds.push(publicId + '.pdf');
-                }
-            }
-
-            zipUrl = await cloudinary.utils.download_zip_url({
-                public_ids: validResumePublicIds,
-                resource_type: 'raw',
-                target_public_id: 'placement/filtered_resumes'
-            });
-        } catch (cloudErr) {
-            console.error('Cloudinary ZIP generation error:', cloudErr);
-            return res.status(500).json({ error: 'Failed to generate ZIP from Cloudinary.' });
-        }
-
-        // Proxy the ZIP file as a blob
-        let response;
-        try {
-            response = await fetch(zipUrl);
-        } catch (fetchErr) {
-            console.error('Fetch error:', fetchErr);
-            return res.status(500).json({ error: 'Failed to fetch ZIP from Cloudinary.' });
-        }
-        if (!response.ok) {
-            console.error('Cloudinary responded with error:', await response.text());
-            return res.status(500).json({ error: 'Failed to fetch ZIP from Cloudinary.' });
-        }
-        res.setHeader('Content-Disposition', 'attachment; filename="resumes.zip"');
-        res.setHeader('Content-Type', 'application/zip');
-        response.body.pipe(res);
-    } catch (error) {
-        console.error('Error downloading filtered resumes:', error.stack || error);
-        res.status(500).json({ error: 'Failed to download resumes.' });
+      }
     }
+
+    // De-dupe + sanity check
+    resumePublicIds = Array.from(new Set(resumePublicIds)).filter(Boolean);
+    if (!resumePublicIds.length) {
+      console.error('No candidate resumes found for download.');
+      return res.status(404).json({ error: 'No valid resumes found.' });
+    }
+
+    // Pick the correct resource_type for PDFs: usually 'image'
+    const RESOURCE_TYPE = 'raw'; // change to 'raw' only if you truly uploaded resumes as raw
+
+    // Helper: check existence using the correct resource_type and no extension
+    async function cloudinaryExists(publicId) {
+      try {
+        const result = await cloudinary.api.resource(publicId, { resource_type: RESOURCE_TYPE });
+        return !!result;
+      } catch {
+        return false;
+      }
+    }
+
+    // Validate in parallel (faster)
+    const existence = await Promise.all(resumePublicIds.map(id => cloudinaryExists(id)));
+    const validResumePublicIds = resumePublicIds.filter((_, i) => existence[i]);
+
+    if (!validResumePublicIds.length) {
+      console.error('All candidate resumes were missing/mismatched type on Cloudinary.');
+      return res.status(404).json({ error: 'No resumes available to zip.' });
+    }
+
+    // Build the ZIP (no extensions in public_ids)
+    let zipUrl;
+    try {
+      zipUrl = await cloudinary.utils.download_zip_url({
+        public_ids: validResumePublicIds,
+        resource_type: RESOURCE_TYPE,
+        target_public_id: 'placement/filtered_resumes',
+        type: 'upload', // usually correct; include if you used non-default delivery type
+      });
+    } catch (cloudErr) {
+      console.error('Cloudinary ZIP generation error:', cloudErr);
+      return res.status(500).json({ error: 'Failed to generate ZIP from Cloudinary.' });
+    }
+
+    // Stream the ZIP back
+    let response;
+    try {
+      response = await fetch(zipUrl);
+    } catch (fetchErr) {
+      console.error('Fetch error:', fetchErr);
+      return res.status(500).json({ error: 'Failed to fetch ZIP from Cloudinary.' });
+    }
+
+    if (!response.ok) {
+      console.error('Cloudinary responded with error:', await response.text());
+      return res.status(500).json({ error: 'Failed to fetch ZIP from Cloudinary.' });
+    }
+
+    res.setHeader('Content-Disposition', 'attachment; filename="resumes.zip"');
+    res.setHeader('Content-Type', 'application/zip');
+    response.body.pipe(res);
+  } catch (error) {
+    console.error('Error downloading filtered resumes:', error.stack || error);
+    res.status(500).json({ error: 'Failed to download resumes.' });
+  }
 };
+
 
 // Parse CSV from Buffer
 const parseCSVBuffer = (buffer) => {
@@ -825,6 +923,34 @@ const getAllStudents = async (req, res) => {
     }
 };
 
+// write a function to get all applications
+const getAllApplications = async (req, res) => {
+    try {
+        const applications = await Application.find()
+            .populate({ path: 'userId', select: 'name email' })
+            .populate({ path: 'companyId', select: 'title _id' });
+
+        // Map applications to include username and company name
+        const mappedApplications = applications.map(app => ({
+            _id: app._id,
+            userName: app.userId?.name || '',
+            userEmail: app.userId?.email || '',
+            companyName: app.companyId?.title || '',
+            resume: app.resume,
+            status: app.status,
+            createdAt: app.createdAt,
+            companyId: app.companyId?._id || '',
+        }));
+        return res.json({
+            message: 'Applications fetched successfully',
+            count: mappedApplications.length,
+            applications: mappedApplications
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch applications' });
+    }
+};
+
 module.exports = {
     registerStudentsFromFile,
     createCompany,
@@ -837,5 +963,6 @@ module.exports = {
     makeStudentCoordinator,
     getStats,
     getAllStudents,
-    downloadFilteredResumesZip
+    downloadFilteredResumesZip,
+    getAllApplications
 };

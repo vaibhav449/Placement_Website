@@ -1,11 +1,12 @@
-import React from 'react'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import Modal from '../Shared/Modal'
 
 const Overview = ({ stats, onNavigate, onAddCompany, onDownloadAllResumes }) => {
   const [showModal, setShowModal] = useState(false)
+  // Updated state to match Companies.jsx
   const [formData, setFormData] = useState({
     title: '',
+    applyLink: '',
     description: '',
     package: '',
     skills: '',
@@ -13,7 +14,8 @@ const Overview = ({ stats, onNavigate, onAddCompany, onDownloadAllResumes }) => 
     deadline: '',
     role: '',
     type: 'Onsite',
-    requiredCgpa: ''
+    isOnCampus: true,
+    requiredCgpa: 0.0
   })
   const [downloadingResumes, setDownloadingResumes] = useState(false)
 
@@ -76,28 +78,36 @@ const Overview = ({ stats, onNavigate, onAddCompany, onDownloadAllResumes }) => 
     }
   }
 
+  // Updated handleSubmit to match Companies.jsx
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (!formData.title || !formData.applyLink) {
+      return // Optionally show a toast/error
+    }
+    const skillsArray = String(formData.skills || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
 
-    if (onAddCompany) {
-      const skillsArray = formData.skills.split(',').map((skill) => skill.trim()).filter(Boolean)
-
-      onAddCompany({
-        title: formData.title,
-        description: formData.description,
-        package: parseFloat(formData.package),
-        skills: skillsArray,
-        requirements: formData.requirements,
-        deadline: formData.deadline,
-        role: formData.role,
-        type: formData.type,
-        requiredCgpa: parseFloat(formData.requiredCgpa) || 0.0
-      })
+    const payload = {
+      title: formData.title,
+      applyLink: formData.applyLink,
+      description: formData.description,
+      package: parseFloat(formData.package) || 0,
+      skills: skillsArray,
+      requirements: formData.requirements,
+      deadline: formData.deadline,
+      role: formData.role,
+      type: formData.type,
+      isOnCampus: !!formData.isOnCampus,
+      requiredCgpa: parseFloat(formData.requiredCgpa) || 0.0
     }
 
+    onAddCompany?.(payload)
     setShowModal(false)
     setFormData({
       title: '',
+      applyLink: '',
       description: '',
       package: '',
       skills: '',
@@ -105,7 +115,8 @@ const Overview = ({ stats, onNavigate, onAddCompany, onDownloadAllResumes }) => 
       deadline: '',
       role: '',
       type: 'Onsite',
-      requiredCgpa: ''
+      isOnCampus: true,
+      requiredCgpa: 0.0
     })
   }
 
@@ -201,6 +212,7 @@ const Overview = ({ stats, onNavigate, onAddCompany, onDownloadAllResumes }) => 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add New Company">
         <form onSubmit={handleSubmit} className="space-y-4 max-h-[72vh] overflow-y-auto pr-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Title (required) */}
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-300 mb-2">Company Title *</label>
               <input
@@ -213,65 +225,79 @@ const Overview = ({ stats, onNavigate, onAddCompany, onDownloadAllResumes }) => 
               />
             </div>
 
+            {/* Apply Link (required) */}
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Description *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Apply Link *</label>
+              <input
+                type="url"
+                value={formData.applyLink}
+                onChange={(e) => setFormData({ ...formData, applyLink: e.target.value })}
+                required
+                className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                placeholder="https://company.com/apply"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows="3"
-                required
                 className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                 placeholder="Enter company description"
               />
             </div>
 
+            {/* Role */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Role *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Role</label>
               <input
                 type="text"
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                required
                 className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                 placeholder="e.g., Software Engineer"
               />
             </div>
 
+            {/* Work Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Work Type *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Work Type</label>
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                required
                 className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
               >
+                <option value="">Select type</option>
                 <option value="Onsite">Onsite</option>
                 <option value="Remote">Remote</option>
                 <option value="Hybrid">Hybrid</option>
               </select>
             </div>
 
+            {/* Package */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Package (LPA) *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Package (LPA)</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.package}
                 onChange={(e) => setFormData({ ...formData, package: e.target.value })}
-                required
                 className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                 placeholder="e.g., 12.5"
               />
             </div>
 
+            {/* Required CGPA */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Required CGPA *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Required CGPA</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.requiredCgpa}
                 onChange={(e) => setFormData({ ...formData, requiredCgpa: e.target.value })}
-                required
                 min="0"
                 max="10"
                 className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
@@ -279,13 +305,13 @@ const Overview = ({ stats, onNavigate, onAddCompany, onDownloadAllResumes }) => 
               />
             </div>
 
+            {/* Application Deadline */}
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Application Deadline *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Application Deadline</label>
               <input
                 type="date"
                 value={formData.deadline}
                 onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                required
                 className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
               />
             </div>
@@ -296,34 +322,48 @@ const Overview = ({ stats, onNavigate, onAddCompany, onDownloadAllResumes }) => 
               <i className="fas fa-list-check mr-2 text-green-400"></i>
               Requirements
             </h4>
-            
             <div className="space-y-3">
+              {/* Skills */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Skills Required * <span className="text-gray-500 text-xs">(comma-separated)</span>
+                  Skills Required <span className="text-gray-500 text-xs">(comma-separated)</span>
                 </label>
                 <input
                   type="text"
                   value={formData.skills}
-                  onChange={e => setFormData({...formData, skills: e.target.value})}
-                  required
+                  onChange={e => setFormData({ ...formData, skills: e.target.value })}
                   className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   placeholder="e.g., JavaScript, React, Node.js"
                 />
               </div>
 
+              {/* Additional Requirements */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Additional Requirements *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Additional Requirements</label>
                 <textarea
                   value={formData.requirements}
-                  onChange={e => setFormData({...formData, requirements: e.target.value})}
+                  onChange={e => setFormData({ ...formData, requirements: e.target.value })}
                   rows="3"
-                  required
                   className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   placeholder="Enter additional requirements or eligibility criteria"
                 />
               </div>
             </div>
+          </div>
+
+          {/* Is On Campus */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Is On Campus
+            </label>
+            <select
+              value={formData.isOnCampus ? 'true' : 'false'}
+              onChange={(e) => setFormData({ ...formData, isOnCampus: e.target.value === 'true' })}
+              className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white"
+            >
+              <option value="true">On-campus</option>
+              <option value="false">Off-campus</option>
+            </select>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4 sticky bottom-0 bg-gray-800 pb-2">

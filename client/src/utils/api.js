@@ -260,7 +260,8 @@ export const coordinatorAPI = {
     return api.post('/coordinators/register-students-file', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
-  }
+  },
+  getAllApplications: () => api.get('/coordinators/applications'),
 };
 
 export default api;

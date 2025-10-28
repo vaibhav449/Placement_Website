@@ -37,4 +37,5 @@ router.get('/resumes/download/:id', downloadCompanyResumesZip);
 router.get('/resumes/download', require('../controller/coordinators').downloadFilteredResumesZip);
 // router.put('/promote', makeStudentCoordinator);
 router.get("/students", getAllStudents);
+router.get("/applications", require('../controller/coordinators').getAllApplications);
 module.exports = router;

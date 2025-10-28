@@ -33,7 +33,7 @@ const CoordinatorDashboard = () => {
         coordinatorAPI.getStudents(),
         coordinatorAPI.getCompanies()
       ])
-      console.log(statsData, studentsData, companiesData);
+      console.log("in dashnorad", companiesData);
       setStats(statsData || {})
       setStudents(studentsData.students || [])
       setCompanies(companiesData.companies || [])
@@ -212,7 +212,7 @@ const CoordinatorDashboard = () => {
               )}
 
               {activeSection === 'resumes' && (
-                <Resumes students={students} companies={companies} showToast={showToast} />
+                <Resumes students={students} companies={companies}  showToast={showToast} />
               )}
             </section>
           </div>

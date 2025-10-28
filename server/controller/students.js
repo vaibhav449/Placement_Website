@@ -169,6 +169,7 @@ const updateProfile = async (req, res) => {
                     }
                 }
             }
+            console.log("Uploading new resume to Cloudinary", req.file);
             const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
                 folder: 'placement/resumes',
                 resource_type: 'raw'
@@ -275,6 +276,8 @@ const { companyId } = req.body;
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
 
+  
+
   let tempFilePath = req.file?.path; // kept for backward compatibility if ever used
 
   try {
@@ -292,6 +295,15 @@ const { companyId } = req.body;
     if (existingApplication) {
       return res.status(400).json({ success: false, message: "You have already applied to this company" });
     }
+
+    // check if company has some required cgpa or other criteria in futures
+  if (company.requiredCgpa && student.cgpa < company.requiredCgpa) {
+    return res.status(400).json({
+      success: false,
+      message: `Your CGPA is below the required ${company.requiredCgpa}.`
+    });
+  }
+
 
     // Decide resume URL: upload file to Cloudinary if present; else use defaultResume
     let resumeUrl;
