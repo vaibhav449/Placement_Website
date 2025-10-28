@@ -1,239 +1,65 @@
-// import { useState } from 'react'
-// import Modal from '../Shared/Modal'
-// import { formatCurrency } from '../../utils/helpers'
+// Companies.jsx
+import React, { useMemo, useState, useEffect } from 'react';
+import Modal from '../Shared/Modal';
+import { formatCurrency as extFormatCurrency } from '../../utils/helpers';
 
-// const Companies = ({ companies, onAdd, onDelete }) => {
-//   const [typeFilter, setTypeFilter] = useState('all')
-//   const [showModal, setShowModal] = useState(false)
-//   const [formData, setFormData] = useState({
-//     name: '',
-//     companyType: 'on-campus',
-//     type: 'Onsite',
-//     description: '',
-//     stipend: ''
-//   })
+/* -------------------------------------------------
+   Tiny breakpoint hook (SSR-safe) — Tailwind-like
+   sm: 640px, md: 768px, lg: 1024px
+-------------------------------------------------- */
+function useBreakpoints() {
+  const getState = () => {
+    if (typeof window === 'undefined') {
+      return { smUp: false, mdUp: false, lgUp: false, width: 0, height: 0 };
+    }
+    const sm = window.matchMedia('(min-width: 640px)');
+    const md = window.matchMedia('(min-width: 768px)');
+    const lg = window.matchMedia('(min-width: 1024px)');
+    return {
+      smUp: sm.matches,
+      mdUp: md.matches,
+      lgUp: lg.matches,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+  };
 
-//   const filteredCompanies = typeFilter === 'all'
-//     ? companies
-//     : companies.filter(c => c.companyType === typeFilter)
+  const [state, setState] = useState(getState);
 
-//   const handleSubmit = (e) => {
-//     e.preventDefault()
-//     onAdd({
-//       ...formData,
-//       stipend: formData.stipend ? parseInt(formData.stipend) : null
-//     })
-//     setShowModal(false)
-//     setFormData({
-//       name: '',
-//       companyType: 'on-campus',
-//       type: 'Onsite',
-//       description: '',
-//       stipend: ''
-//     })
-//   }
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mqls = [
+      window.matchMedia('(min-width: 640px)'),
+      window.matchMedia('(min-width: 768px)'),
+      window.matchMedia('(min-width: 1024px)'),
+    ];
 
-//   const filters = [
-//     { key: 'all', label: 'All Companies', icon: 'globe' },
-//     { key: 'on-campus', label: 'On-Campus', icon: 'building' },
-//     { key: 'off-campus', label: 'Off-Campus', icon: 'map-marker-alt' }
-//   ]
+    const onChange = () => {
+      // rAF to coalesce resize events
+      requestAnimationFrame(() => setState(getState()));
+    };
 
-//   return (
-//     <div className="space-y-6 animate-in fade-in duration-500">
-//       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-//         <div>
-//           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-2">
-//             Companies Management
-//           </h1>
-//           <p className="text-gray-400">Manage on-campus and off-campus opportunities</p>
-//         </div>
-//         <button
-//           onClick={() => setShowModal(true)}
-//           className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl px-6 py-3 flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-purple-500/50 hover:scale-105"
-//         >
-//           <i className="fas fa-plus"></i>
-//           <span className="font-medium">Add Company</span>
-//         </button>
-//       </div>
+    mqls.forEach((m) => m.addEventListener?.('change', onChange));
+    window.addEventListener('resize', onChange);
+    return () => {
+      mqls.forEach((m) => m.removeEventListener?.('change', onChange));
+      window.removeEventListener('resize', onChange);
+    };
+  }, []);
 
-//       <div className="flex flex-wrap gap-3">
-//         {filters.map(filter => (
-//           <button
-//             key={filter.key}
-//             onClick={() => setTypeFilter(filter.key)}
-//             className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-//               typeFilter === filter.key
-//                 ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
-//                 : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-200 border border-gray-700/50'
-//             }`}
-//           >
-//             <i className={`fas fa-${filter.icon}`}></i>
-//             <span>{filter.label}</span>
-//           </button>
-//         ))}
-//       </div>
+  return state; // { smUp, mdUp, lgUp, width, height }
+}
 
-//       {filteredCompanies.length === 0 ? (
-//         <div className="text-center py-20 bg-gray-800/30 rounded-2xl border border-gray-700/50">
-//           <i className="fas fa-building text-6xl text-gray-600 mb-4"></i>
-//           <p className="text-xl text-gray-400">No companies found</p>
-//         </div>
-//       ) : (
-//         <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
-//           <div className="overflow-x-auto">
-//             <table className="w-full">
-//               <thead className="bg-gray-800/50">
-//                 <tr>
-//                   {['Company Name', 'Type', 'Location', 'Stipend', 'Actions'].map(header => (
-//                     <th key={header} className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-//                       {header}
-//                     </th>
-//                   ))}
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y divide-gray-700/50">
-//                 {filteredCompanies.map(company => (
-//                   <tr key={company._id} className="hover:bg-gray-700/30 transition-colors duration-200">
-//                     <td className="px-6 py-4">
-//                       <div className="flex items-center space-x-3">
-//                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-//                           <i className="fas fa-building text-white"></i>
-//                         </div>
-//                         <span className="font-medium text-white">{company.name}</span>
-//                       </div>
-//                     </td>
-//                     <td className="px-6 py-4">
-//                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-//                         company.companyType === 'off-campus' 
-//                           ? 'bg-orange-500/20 text-orange-400' 
-//                           : 'bg-purple-500/20 text-purple-400'
-//                       }`}>
-//                         {company.companyType === 'off-campus' ? '🌐 Off-Campus' : '🏢 On-Campus'}
-//                       </span>
-//                     </td>
-//                     <td className="px-6 py-4 text-gray-300">{company.type || 'Not specified'}</td>
-//                     <td className="px-6 py-4 text-gray-300">
-//                       {company.stipend ? (
-//                         <span className="text-green-400 font-semibold">{formatCurrency(company.stipend)}</span>
-//                       ) : (
-//                         'Not specified'
-//                       )}
-//                     </td>
-//                     <td className="px-6 py-4">
-//                       <button
-//                         onClick={() => onDelete(company._id)}
-//                         className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-all duration-200"
-//                         title="Delete Company"
-//                       >
-//                         <i className="fas fa-trash"></i>
-//                       </button>
-//                     </td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
+/* -------------------------------------------------
+   Component
+-------------------------------------------------- */
+const Companies = ({ companies = [], onAdd, onDelete }) => {
+  const { smUp } = useBreakpoints();
+  const isMobile = !smUp; // <640px → mobile, ≥640px → desktop
 
-//       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add New Company">
-//         <form onSubmit={handleSubmit} className="space-y-4">
-//           <div>
-//             <label className="block text-sm font-medium text-gray-300 mb-2">Company Name *</label>
-//             <input
-//               type="text"
-//               value={formData.name}
-//               onChange={e => setFormData({...formData, name: e.target.value})}
-//               required
-//               className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
-//               placeholder="Enter company name"
-//             />
-//           </div>
-
-//           <div className="grid grid-cols-2 gap-4">
-//             <div>
-//               <label className="block text-sm font-medium text-gray-300 mb-2">Company Type *</label>
-//               <select
-//                 value={formData.companyType}
-//                 onChange={e => setFormData({...formData, companyType: e.target.value})}
-//                 required
-//                 className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
-//               >
-//                 <option value="on-campus">🏢 On-Campus</option>
-//                 <option value="off-campus">🌐 Off-Campus</option>
-//               </select>
-//             </div>
-
-//             <div>
-//               <label className="block text-sm font-medium text-gray-300 mb-2">Location Type *</label>
-//               <select
-//                 value={formData.type}
-//                 onChange={e => setFormData({...formData, type: e.target.value})}
-//                 required
-//                 className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
-//               >
-//                 <option value="Onsite">Onsite</option>
-//                 <option value="Remote">Remote</option>
-//                 <option value="Hybrid">Hybrid</option>
-//               </select>
-//             </div>
-//           </div>
-
-//           <div>
-//             <label className="block text-sm font-medium text-gray-300 mb-2">Description *</label>
-//             <textarea
-//               value={formData.description}
-//               onChange={e => setFormData({...formData, description: e.target.value})}
-//               rows="3"
-//               required
-//               className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
-//               placeholder="Enter company description"
-//             />
-//           </div>
-
-//           <div>
-//             <label className="block text-sm font-medium text-gray-300 mb-2">Stipend (₹)</label>
-//             <input
-//               type="number"
-//               value={formData.stipend}
-//               onChange={e => setFormData({...formData, stipend: e.target.value})}
-//               className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
-//               placeholder="Enter stipend amount"
-//             />
-//           </div>
-
-//           <div className="flex justify-end space-x-3 pt-4">
-//             <button
-//               type="button"
-//               onClick={() => setShowModal(false)}
-//               className="px-6 py-2.5 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700/50 transition-colors duration-200"
-//             >
-//               Cancel
-//             </button>
-//             <button
-//               type="submit"
-//               className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center space-x-2"
-//             >
-//               <i className="fas fa-plus"></i>
-//               <span>Add Company</span>
-//             </button>
-//           </div>
-//         </form>
-//       </Modal>
-//     </div>
-//   )
-// }
-
-// export default Companies
-
-import { useState } from 'react'
-import Modal from '../Shared/Modal'
-import { formatCurrency } from '../../utils/helpers'
-
-const Companies = ({ companies, onAdd, onDelete }) => {
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [showModal, setShowModal] = useState(false)
+  const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'Onsite' | 'Remote' | 'Hybrid'
+  const [campusFilter, setCampusFilter] = useState('all'); // 'all' | 'on' | 'off'
+  const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -243,32 +69,90 @@ const Companies = ({ companies, onAdd, onDelete }) => {
     deadline: '',
     role: '',
     type: 'Onsite',
-    requiredCgpa: ''
-  })
+    isOnCampus: true,
+    applyLink: '',
+    requiredCgpa: 0.0,
+  });
 
-  const filteredCompanies = typeFilter === 'all'
-    ? companies
-    : companies.filter(c => c.type === typeFilter)
+  // Fallback currency formatter
+  const safeFormatCurrency = (n) => {
+    try {
+      if (typeof extFormatCurrency === 'function') {
+        const v = extFormatCurrency(n);
+        if (v) return v;
+      }
+    } catch {}
+    const num = Number(n);
+    if (Number.isNaN(num)) return '0';
+    return num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  };
+
+  // Normalize type
+  const normalizeType = (raw) => {
+    if (!raw && raw !== 0) return 'Onsite';
+    const s = String(raw).trim().toLowerCase();
+    if (s.includes('remote')) return 'Remote';
+    if (s.includes('hybrid')) return 'Hybrid';
+    if (s.includes('on') && s.includes('site')) return 'Onsite';
+    if (s === 'onsite' || s === 'on-site' || s === 'on site') return 'Onsite';
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+
+  // Normalize campus to boolean
+  const normalizeIsOnCampus = (company) => {
+    if (typeof company.isOnCampus === 'boolean') return company.isOnCampus;
+    if (company.campus) {
+      const s = String(company.campus).trim().toLowerCase();
+      if (s.includes('on')) return true;
+      if (s.includes('off')) return false;
+    }
+    return normalizeType(company.type) === 'Onsite';
+  };
+
+  const normalizedCompanies = useMemo(
+    () =>
+      (companies || []).map((c) => {
+        const _displayType = normalizeType(c.type);
+        const _isOnCampus = normalizeIsOnCampus(c);
+        return { ...c, _displayType, _isOnCampus };
+      }),
+    [companies]
+  );
+
+  const filteredCompanies = useMemo(
+    () =>
+      normalizedCompanies.filter((c) => {
+        const typeMatch = typeFilter === 'all' ? true : c._displayType === typeFilter;
+        const campusMatch =
+          campusFilter === 'all' ? true : campusFilter === 'on' ? c._isOnCampus : !c._isOnCampus;
+        return typeMatch && campusMatch;
+      }),
+    [normalizedCompanies, typeFilter, campusFilter]
+  );
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    
-    // Convert skills from comma-separated string to array
-    const skillsArray = formData.skills.split(',').map(skill => skill.trim()).filter(skill => skill)
-    
-    onAdd({
+    e.preventDefault();
+    const skillsArray = String(formData.skills || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const payload = {
       title: formData.title,
       description: formData.description,
-      package: parseFloat(formData.package),
+      package: parseFloat(formData.package) || 0,
       skills: skillsArray,
       requirements: formData.requirements,
       deadline: formData.deadline,
       role: formData.role,
-      type: formData.type,
-      requiredCgpa: parseFloat(formData.requiredCgpa) || 0.0
-    })
-    
-    setShowModal(false)
+      type: normalizeType(formData.type),
+      isOnCampus: !!formData.isOnCampus,
+      applyLink: formData.applyLink,
+      requiredCgpa: parseFloat(formData.requiredCgpa) || 0.0,
+    };
+
+    onAdd?.(payload);
+    setShowModal(false);
     setFormData({
       title: '',
       description: '',
@@ -278,178 +162,416 @@ const Companies = ({ companies, onAdd, onDelete }) => {
       deadline: '',
       role: '',
       type: 'Onsite',
-      requiredCgpa: ''
-    })
-  }
+      isOnCampus: true,
+      applyLink: '',
+      requiredCgpa: 0.0,
+    });
+  };
 
   const filters = [
     { key: 'all', label: 'All Companies', icon: 'globe' },
     { key: 'Remote', label: 'Remote', icon: 'laptop' },
     { key: 'Onsite', label: 'Onsite', icon: 'building' },
-    { key: 'Hybrid', label: 'Hybrid', icon: 'briefcase' }
-  ]
+    { key: 'Hybrid', label: 'Hybrid', icon: 'briefcase' },
+  ];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-2">
-            Companies Management
-          </h1>
-          <p className="text-gray-400">Manage company opportunities and placements</p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl px-6 py-3 flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-purple-500/50 hover:scale-105"
-        >
-          <i className="fas fa-plus"></i>
-          <span className="font-medium">Add Company</span>
-        </button>
-      </div>
+    <div className="w-full">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-2">
+              Companies
+            </h1>
+            <p className="text-sm text-gray-300 max-w-xl">
+              Manage on-campus and off-campus opportunities. Use filters to narrow down listings.
+            </p>
+          </div>
 
-      <div className="flex flex-wrap gap-3">
-        {filters.map(filter => (
-          <button
-            key={filter.key}
-            onClick={() => setTypeFilter(filter.key)}
-            className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-              typeFilter === filter.key
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
-                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-200 border border-gray-700/50'
-            }`}
-          >
-            <i className={`fas fa-${filter.icon}`}></i>
-            <span>{filter.label}</span>
-          </button>
-        ))}
-      </div>
+          {/* Filters (JS controlled) */}
+          <div className="flex items-center gap-3">
+            {!isMobile ? (
+              <>
+                {/* Desktop campus filter */}
+                <div className="flex items-center gap-2 bg-gray-800/60 rounded-lg p-1 border border-gray-700/70">
+                  <button
+                    onClick={() => setCampusFilter('all')}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      campusFilter === 'all' ? 'bg-white/10 text-white' : 'text-gray-200'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setCampusFilter('on')}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      campusFilter === 'on'
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                        : 'text-gray-200'
+                    }`}
+                  >
+                    On-campus
+                  </button>
+                  <button
+                    onClick={() => setCampusFilter('off')}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      campusFilter === 'off'
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                        : 'text-gray-200'
+                    }`}
+                  >
+                    Off-campus
+                  </button>
+                </div>
 
-      {filteredCompanies.length === 0 ? (
-        <div className="text-center py-20 bg-gray-800/30 rounded-2xl border border-gray-700/50">
-          <i className="fas fa-building text-6xl text-gray-600 mb-4"></i>
-          <p className="text-xl text-gray-400">No companies found</p>
-        </div>
-      ) : (
-        <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-800/50">
-                <tr>
-                  {['Company', 'Role', 'Type', 'Package', 'Required CGPA', 'Deadline', 'Actions'].map(header => (
-                    <th key={header} className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-                      {header}
-                    </th>
+                {/* Desktop type filter */}
+                <div className="flex flex-wrap gap-3">
+                  {filters.map((filter) => (
+                    <button
+                      key={filter.key}
+                      onClick={() => setTypeFilter(filter.key)}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-150 text-sm ${
+                        typeFilter === filter.key
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                          : 'bg-gray-800/60 text-gray-200 hover:bg-gray-700/70'
+                      }`}
+                    >
+                      <i className={`fas fa-${filter.icon}`}></i>
+                      <span>{filter.label}</span>
+                    </button>
                   ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700/50">
-                {filteredCompanies.map(company => (
-                  <tr key={company._id} className="hover:bg-gray-700/30 transition-colors duration-200">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                          <i className="fas fa-building text-white"></i>
-                        </div>
-                        <span className="font-medium text-white">{company.title}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Mobile campus filter */}
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  <button
+                    onClick={() => setCampusFilter('all')}
+                    className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium ${
+                      campusFilter === 'all' ? 'bg-white/10 text-white' : 'bg-gray-800/60 text-gray-200'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setCampusFilter('on')}
+                    className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium ${
+                      campusFilter === 'on'
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                        : 'bg-gray-800/60 text-gray-200'
+                    }`}
+                  >
+                    On-campus
+                  </button>
+                  <button
+                    onClick={() => setCampusFilter('off')}
+                    className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium ${
+                      campusFilter === 'off'
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                        : 'bg-gray-800/60 text-gray-200'
+                    }`}
+                  >
+                    Off-campus
+                  </button>
+                </div>
+
+                {/* Mobile type filter */}
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {filters.map((filter) => (
+                    <button
+                      key={filter.key}
+                      onClick={() => setTypeFilter(filter.key)}
+                      className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium ${
+                        typeFilter === filter.key
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                          : 'bg-gray-800/60 text-gray-200'
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Add button (common) */}
+            <button
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-sm text-sm"
+            >
+              <i className="fas fa-plus"></i>
+              <span>Add Company</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Content area: Desktop table vs Mobile cards */}
+        {!isMobile ? (
+          /* Desktop table (≥640px) */
+          <div className="w-full">
+            <div className="overflow-x-auto w-full">
+              <table className="min-w-full table-auto border-collapse">
+                <thead className="bg-gray-800/80">
+                  <tr>
+                    {[
+                      'Company',
+                      'Role',
+                      'Type',
+                      'Campus',
+                      'Package',
+                      'Required CGPA',
+                      'Deadline',
+                      'Apply',
+                      'Actions',
+                    ].map((header) => (
+                      <th
+                        key={header}
+                        className="px-6 py-4 text-left text-sm font-semibold text-gray-200 whitespace-nowrap border-b border-gray-700"
+                      >
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-gray-700/60">
+                  {filteredCompanies.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" className="py-10 text-center text-gray-400">
+                        <i className="fas fa-building text-4xl text-gray-600 mb-3 block"></i>
+                        <p className="text-lg">No companies found</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Click &quot;Add Company&quot; to create a new listing.
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredCompanies.map((company) => {
+                      const key = company._id || company.id || company.title || Math.random();
+                      const deadline =
+                        company.deadline && !Number.isNaN(new Date(company.deadline).getTime())
+                          ? new Date(company.deadline).toLocaleDateString()
+                          : '-';
+                      return (
+                        <tr key={key} className="hover:bg-gray-700/30 transition-colors duration-150">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3 min-w-[220px]">
+                              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white">
+                                <i className="fas fa-building"></i>
+                              </div>
+                              <div>
+                                <div className="font-medium text-white">{company.title || '-'}</div>
+                                <div className="text-xs text-gray-400 line-clamp-1">
+                                  {company.description?.slice(0, 80)}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-4 text-gray-200">{company.role || '-'}</td>
+
+                          <td className="px-6 py-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs md:text-sm font-medium ${
+                                company._displayType === 'Remote'
+                                  ? 'bg-blue-500/20 text-blue-300'
+                                  : company._displayType === 'Hybrid'
+                                  ? 'bg-purple-500/20 text-purple-300'
+                                  : 'bg-orange-500/20 text-orange-300'
+                              }`}
+                            >
+                              {company._displayType}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4">
+                            <span className="px-3 py-1 rounded-full text-xs md:text-sm font-medium bg-gray-700/60 text-gray-100">
+                              {company._isOnCampus ? 'On-campus' : 'Off-campus'}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4">
+                            <span className="text-green-400 font-semibold whitespace-nowrap">
+                              {company.package || company.package === 0
+                                ? `${safeFormatCurrency(company.package)} LPA`
+                                : 'Not specified'}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4 text-gray-200 text-center">
+                            {company.requiredCgpa ?? '-'}
+                          </td>
+
+                          <td className="px-6 py-4 text-gray-200 whitespace-nowrap">{deadline}</td>
+
+                          <td className="px-6 py-4">
+                            {company.applyLink ? (
+                              <a
+                                href={company.applyLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm"
+                              >
+                                Apply
+                              </a>
+                            ) : (
+                              <span className="text-sm text-gray-400">N/A</span>
+                            )}
+                          </td>
+
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => onDelete?.(company._id || company.id)}
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-all duration-150"
+                              title="Delete Company"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          /* Mobile cards (<640px) */
+          <div className="grid gap-3">
+            {filteredCompanies.length === 0 ? (
+              <div className="text-center py-8 bg-gray-800/60 rounded-2xl border border-gray-700/70">
+                <i className="fas fa-building text-5xl text-gray-600 mb-3"></i>
+                <p className="text-lg text-gray-300">No companies found</p>
+              </div>
+            ) : (
+              filteredCompanies.map((company) => (
+                <article
+                  key={company._id || company.id || company.title}
+                  className="bg-gray-800/60 border border-gray-700/70 rounded-xl p-4 flex flex-col gap-3"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 flex-shrink-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white">
+                      <i className="fas fa-building"></i>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-base font-semibold text-white">{company.title}</h3>
+                        <span className="text-xs text-gray-300">
+                          {company.deadline && !Number.isNaN(new Date(company.deadline).getTime())
+                            ? new Date(company.deadline).toLocaleDateString()
+                            : '-'}
+                        </span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-300">{company.role}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        company.type === 'Remote' 
-                          ? 'bg-blue-500/20 text-blue-400' 
-                          : company.type === 'Hybrid'
-                          ? 'bg-purple-500/20 text-purple-400'
-                          : 'bg-orange-500/20 text-orange-400'
-                      }`}>
-                        {company.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-green-400 font-semibold">{formatCurrency(company.package )+ " LPA"}</span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-300">{company.requiredCgpa}</td>
-                    <td className="px-6 py-4 text-gray-300">
-                      {new Date(company.deadline).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-400 mt-1 line-clamp-2">{company.description}</p>
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <span className="text-xs px-2 py-1 rounded-md bg-gray-700/60 text-gray-100">
+                          {company.role}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-md bg-gray-700/60 text-gray-100">
+                          {company._displayType}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-md bg-gray-700/60 text-green-300">
+                          {company.package || company.package === 0
+                            ? `${safeFormatCurrency(company.package)} LPA`
+                            : 'N/A'}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-md bg-gray-700/60 text-gray-100">
+                          {company._isOnCampus ? 'On-campus' : 'Off-campus'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {company.applyLink ? (
+                        <a
+                          href={company.applyLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm"
+                        >
+                          Apply
+                        </a>
+                      ) : (
+                        <span className="text-sm text-gray-400 px-3 py-2">No apply link</span>
+                      )}
+                    </div>
+
+                    <div>
                       <button
-                        onClick={() => onDelete(company._id)}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-all duration-200"
-                        title="Delete Company"
+                        onClick={() => onDelete?.(company._id || company.id)}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-all duration-150"
                       >
                         <i className="fas fa-trash"></i>
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </article>
+              ))
+            )}
           </div>
-        </div>
-      )}
+        )}
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add New Company">
-        <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-          <div className="bg-gray-700/20 rounded-lg p-4 border border-gray-600/30">
-            <h4 className="text-lg font-semibold text-white mb-3 flex items-center">
-              <i className="fas fa-building mr-2 text-purple-400"></i>
-              Company Details
-            </h4>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Company Title *</label>
+        {/* Desktop empty-state banner (only show on desktop when empty) */}
+        {!isMobile && filteredCompanies.length === 0 && (
+          <div className="text-center py-12 bg-gray-800/60 rounded-2xl border border-gray-700/70">
+            <i className="fas fa-building text-6xl text-gray-600 mr-4"></i>
+            <div>
+              <p className="text-xl text-gray-300">No companies found</p>
+              <p className="text-sm text-gray-400 mt-2">
+                Click &quot;Add Company&quot; to create a new listing.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Modal */}
+        <Modal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title="Add New Company"
+          className="max-w-xl sm:max-w-3xl w-full"
+          mobileFullScreen
+        >
+          <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Company Title *
+                </label>
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={e => setFormData({...formData, title: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
-                  className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-150"
                   placeholder="e.g., Google India"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Description *</label>
-                <textarea
-                  value={formData.description}
-                  onChange={e => setFormData({...formData, description: e.target.value})}
-                  rows="3"
-                  required
-                  className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
-                  placeholder="Enter company description"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-700/20 rounded-lg p-4 border border-gray-600/30">
-            <h4 className="text-lg font-semibold text-white mb-3 flex items-center">
-              <i className="fas fa-briefcase mr-2 text-blue-400"></i>
-              Job Details
-            </h4>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Role *</label>
+                <label className="block text-sm font-medium text-gray-200 mb-2">Role *</label>
                 <input
                   type="text"
                   value={formData.role}
-                  onChange={e => setFormData({...formData, role: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   required
-                  className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-150"
                   placeholder="e.g., Software Engineer"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Work Type *</label>
+                <label className="block text-sm font-medium text-gray-200 mb-2">Work Type *</label>
                 <select
                   value={formData.type}
-                  onChange={e => setFormData({...formData, type: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   required
-                  className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-150"
                 >
                   <option value="Onsite">Onsite</option>
                   <option value="Remote">Remote</option>
@@ -458,101 +580,140 @@ const Companies = ({ companies, onAdd, onDelete }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Package (₹ LPA) *</label>
+                <label className="block text-sm font-medium text-gray-200 mb-2">Campus *</label>
+                <select
+                  value={formData.isOnCampus ? 'on' : 'off'}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isOnCampus: e.target.value === 'on' })
+                  }
+                  required
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-150"
+                >
+                  <option value="on">On-campus</option>
+                  <option value="off">Off-campus</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Package (LPA) *
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.package}
-                  onChange={e => setFormData({...formData, package: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, package: e.target.value })}
                   required
-                  className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-150"
                   placeholder="e.g., 12.5"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Required CGPA *</label>
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Required CGPA *
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.requiredCgpa}
-                  onChange={e => setFormData({...formData, requiredCgpa: e.target.value})}
-                  required
+                  onChange={(e) => setFormData({ ...formData, requiredCgpa: e.target.value })}
                   min="0"
                   max="10"
-                  className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                  required
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-150"
                   placeholder="e.g., 7.5"
                 />
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-300 mb-2">Application Deadline *</label>
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Application Deadline *
+                </label>
                 <input
                   type="date"
                   value={formData.deadline}
-                  onChange={e => setFormData({...formData, deadline: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
                   required
-                  className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-150"
                 />
               </div>
-            </div>
-          </div>
 
-          <div className="bg-gray-700/20 rounded-lg p-4 border border-gray-600/30">
-            <h4 className="text-lg font-semibold text-white mb-3 flex items-center">
-              <i className="fas fa-list-check mr-2 text-green-400"></i>
-              Requirements
-            </h4>
-            
-            <div className="space-y-3">
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Description *
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows="3"
+                  required
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-150"
+                  placeholder="Enter company/job description"
+                />
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Skills Required * <span className="text-gray-500 text-xs">(comma-separated)</span>
+                <label className="block text-sm font-medium text-gray-200 mb-2">Apply Link *</label>
+                <input
+                  type="url"
+                  value={formData.applyLink}
+                  onChange={(e) => setFormData({ ...formData, applyLink: e.target.value })}
+                  placeholder="https://company.com/apply"
+                  required
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-150"
+                />
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Skills Required <span className="text-xs text-gray-400">(comma separated)</span>
                 </label>
                 <input
                   type="text"
                   value={formData.skills}
-                  onChange={e => setFormData({...formData, skills: e.target.value})}
-                  required
-                  className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                  onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-150"
                   placeholder="e.g., JavaScript, React, Node.js"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Additional Requirements *</label>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Additional Requirements *
+                </label>
                 <textarea
                   value={formData.requirements}
-                  onChange={e => setFormData({...formData, requirements: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                   rows="3"
                   required
-                  className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                  className="w-full bg-gray-700/60 border border-gray-600/60 rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-150"
                   placeholder="Enter additional requirements or eligibility criteria"
                 />
               </div>
             </div>
-          </div>
 
-          <div className="flex justify-end space-x-3 pt-4 sticky bottom-0 bg-gray-800 pb-2">
-            <button
-              type="button"
-              onClick={() => setShowModal(false)}
-              className="px-6 py-2.5 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700/50 transition-colors duration-200"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center space-x-2"
-            >
-              <i className="fas fa-plus"></i>
-              <span>Add Company</span>
-            </button>
-          </div>
-        </form>
-      </Modal>
+            <div className="flex justify-end gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 border border-gray-600 text-gray-200 rounded-lg hover:bg-gray-700/50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg flex items-center gap-2"
+              >
+                <i className="fas fa-plus"></i>
+                <span>Add Company</span>
+              </button>
+            </div>
+          </form>
+        </Modal>
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default Companies
+export default Companies;

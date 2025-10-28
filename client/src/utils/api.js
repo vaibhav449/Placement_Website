@@ -179,14 +179,14 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = "https://placement-website-kappa.vercel.app/api";
+const API_BASE_URL = "http://localhost:5000/api";
 
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // headers: {
+  //   'Content-Type': 'application/json',
+  // },
 });
 
 // Request interceptor to add auth token
@@ -228,21 +228,15 @@ export const authAPI = {
 // Student APIs
 export const studentAPI = {
   getProfile: () => api.get('/students/profile'),
-  updateProfile: (data) => api.put('/students/profile', data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  } ),
-  completeProfile: (formData) => api.post('/students/profile/complete', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  updateProfile: (data) => api.put('/students/profile', data),
+  completeProfile: (formData) => api.post('/students/profile/complete', formData), // removed header override
   getCompanies: () => api.get('/students/companies'),
   applyToCompany: (companyId) => api.post('/students/apply', { companyId }),
   getApplications: () => api.get('/students/applications'),
   uploadResume: (file) => {
     const formData = new FormData();
     formData.append('resume', file);
-    return api.post('/students/resume/default', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    return api.post('/students/resume/default', formData); // removed header override
   }
 };
 

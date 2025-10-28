@@ -23,7 +23,7 @@ router.put("/profile", authenticateStudent, upload.single('resume'), updateProfi
 router.get("/applications", authenticateStudent, getMyApplications);
 
 // Routes that require complete profile
-router.post("/apply/:companyId", authenticateStudent, requireCompleteProfile, upload.single('resume'), applyToCompany);
+router.post("/apply", authenticateStudent, requireCompleteProfile, upload.single('resume'), applyToCompany);
 
 // Resume management routes
 router.post("/resume/default", authenticateStudent, upload.single('resume'), updateDefaultResume);

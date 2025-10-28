@@ -15,7 +15,7 @@ const getStats = async (req, res) => {
         const totalStudents = await require('../models/students').countDocuments();
         const totalCompanies = await require('../models/companies').countDocuments();
         const totalApplications = await require('../models/application').countDocuments();
-        res.json({
+        return res.json({
             totalStudents,
             totalCompanies,
             totalApplications
@@ -158,13 +158,28 @@ const createCompany = async (req, res) => {
             requirements,
             deadline,
             role,
-            type
+            type,
+            requiredCgpa,
+            applyLink,
+            isOnCampus
         } = req.body;
 
         // Validate required fields
-        if (!title || !description || !pkg || !skills || !requirements || !deadline || !role || !type) {
+        if (
+            !title ||
+            !description ||
+            !pkg ||
+            !skills ||
+            !requirements ||
+            !deadline ||
+            !role ||
+            !type ||
+            requiredCgpa === undefined ||
+            !applyLink ||
+            isOnCampus === undefined
+        ) {
             return res.status(400).json({
-                error: 'Missing required fields: title, description, package, skills, requirements, deadline, role, type are required.'
+                error: 'Missing required fields: title, description, package, skills, requirements, deadline, role, type, requiredCgpa, applyLink, isOnCampus are required.'
             });
         }
 
@@ -182,10 +197,31 @@ const createCompany = async (req, res) => {
             });
         }
 
+        // Validate requiredCgpa
+        if (isNaN(requiredCgpa) || requiredCgpa < 0 || requiredCgpa > 10) {
+            return res.status(400).json({
+                error: 'requiredCgpa must be a number between 0 and 10'
+            });
+        }
+
         // Validate skills
         if (!Array.isArray(skills) || skills.length === 0) {
             return res.status(400).json({
                 error: 'Skills must be a non-empty array'
+            });
+        }
+
+        // Validate applyLink
+        if (typeof applyLink !== 'string' || !applyLink.trim()) {
+            return res.status(400).json({
+                error: 'applyLink must be a non-empty string'
+            });
+        }
+
+        // Validate isOnCampus
+        if (typeof isOnCampus !== 'boolean') {
+            return res.status(400).json({
+                error: 'isOnCampus must be a boolean'
             });
         }
 
@@ -206,7 +242,10 @@ const createCompany = async (req, res) => {
             requirements: requirements.trim(),
             deadline: new Date(deadline),
             role: role.trim(),
-            type
+            type,
+            requiredCgpa: parseFloat(requiredCgpa),
+            applyLink: applyLink.trim(),
+            isOnCampus: Boolean(isOnCampus)
         };
 
         // Save company to database

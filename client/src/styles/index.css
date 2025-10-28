@@ -4,6 +4,7 @@
 @tailwind utilities;
 
 
+
 :root {
   /* Color System */
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -247,3 +248,4 @@ textarea.form-control {
     font-size: 14px;
   }
 }
+

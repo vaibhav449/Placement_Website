@@ -1,3 +1,4 @@
+import React from 'react';
 import { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../utils/api';
 

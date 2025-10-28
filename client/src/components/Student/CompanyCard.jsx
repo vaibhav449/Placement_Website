@@ -1,3 +1,4 @@
+import React from 'react'
 import { formatCurrency } from '../../utils/helpers'
 
 const CompanyCard = ({ company, hasApplied, onApply }) => {

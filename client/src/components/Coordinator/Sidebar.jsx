@@ -1,3 +1,4 @@
+import React from 'react'
 const Sidebar = ({ activeSection, setActiveSection }) => {
   const navItems = [
     { key: 'overview', icon: 'th-large', label: 'Overview', color: 'from-blue-500 to-cyan-500' },

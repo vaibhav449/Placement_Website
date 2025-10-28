@@ -681,7 +681,7 @@
 
 // export default ProfileTab
 
-
+import React from 'react'
 import { useState, useEffect } from 'react'
 import { studentAPI } from '../../utils/api'
 import { validateFile } from '../../utils/validation'

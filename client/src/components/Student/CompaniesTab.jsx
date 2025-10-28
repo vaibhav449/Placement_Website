@@ -1,3 +1,4 @@
+import React from 'react'
 import CompanyCard from './CompanyCard'
 
 const CompaniesTab = ({ companies, applications, onApply }) => {

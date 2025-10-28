@@ -380,7 +380,7 @@
 // }
 
 // export default Students
-
+import React from 'react'
 import { useState } from 'react'
 import Modal from '../Shared/Modal'
 
@@ -393,7 +393,7 @@ const Students = ({ students, onDelete, onRefresh }) => {
   const [selectedFile, setSelectedFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [uploadResult, setUploadResult] = useState(null)
-
+  
   const filteredStudents = students.filter(student => {
     const year = student.details?.year;
     const matchesBatch = batchFilter === 'all' || year === batchFilter;

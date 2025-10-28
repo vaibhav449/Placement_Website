@@ -351,13 +351,47 @@
   }
 }
 
+@media (max-width: 900px) {
+  .responsive-grid { grid-template-columns: 1fr 1fr; padding: 1.25rem; gap: 1rem; }
+  .landing-title { font-size: 1.4rem; }
+  .responsive-card { max-width: 380px; }
+}
+
 @media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr;
+  /* stack columns vertically on tablets/phones */
+  .responsive-grid { 
+    grid-template-columns: 1fr; 
+    padding: 1rem; 
+    gap: 0.75rem; 
+    align-items: start;
   }
-  
-  .login-card,
-  .profile-setup-container {
-    padding: 32px;
+
+  /* ensure info column is visible and full width (was hidden previously) */
+  .hide-on-sm { 
+    display: block !important; 
+    width: 100%;
+    padding: 0.5rem 0;
   }
+
+  .landing-login { width: 100%; }
+  .login-card { padding: 1rem; border-radius: 10px; margin: 0; }
+  .role-toggle { gap: 2px; padding: 3px; }
+  .role-btn { padding: 0.45rem; font-size: 0.9rem; }
+  .landing-title { font-size: 1.25rem; }
+  .form-control { font-size: 0.95rem; padding: 0.6rem; }
+  .btn { padding: 0.6rem; }
+}
+
+/* keep small-screen tweaks but ensure info appears above login on very small screens */
+@media (max-width: 420px) {
+  .responsive-grid { gap: 0.5rem; }
+  .landing-info { padding: 0.6rem 0.5rem; order: 0; }
+  .landing-title { font-size: 1.05rem; line-height: 1.1; }
+  .role-toggle { flex-direction: row; }
+  .role-toggle-slider { display: none; } /* simpler on tiny screens */
+  .login-card { padding: 0.85rem; }
+  .form-control { padding: 0.55rem; }
+  .password-toggle { right: 6px; }
+  .landing-features { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
+  .landing-subtitle { font-size: 0.95rem; }
 }

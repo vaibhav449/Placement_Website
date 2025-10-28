@@ -449,7 +449,7 @@
 
 // export default StudentDashboard
 
-
+import React from 'react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../hooks/useToast'
@@ -494,13 +494,13 @@ const StudentDashboard = () => {
     try {
       const [profileData, companiesData, applicationsData] = await Promise.all([
         studentAPI.getProfile(),
-        studentAPI.getCompanies(),
+        studentAPI.getCompanies(),  
         studentAPI.getApplications()
       ])
-      console.log("Fetched profile data in dashboard:", profileData)
+      console.log("Fetched profile data in dashboard:", applicationsData.data)
       setUserProfile(profileData.data.user)
-      setCompanies(companiesData.companies || [])
-      setApplications(applicationsData.applications || [])
+      setCompanies(companiesData.data || [])
+      setApplications(applicationsData.data || [])
       
       // Force profile tab if incomplete
       if (!checkProfileComplete(profileData.student)) {

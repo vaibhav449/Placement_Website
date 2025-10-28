@@ -1,3 +1,4 @@
+import React from 'react'
 import { formatDate } from '../../utils/helpers'
 
 const ApplicationsTab = ({ applications }) => {
@@ -12,7 +13,7 @@ const ApplicationsTab = ({ applications }) => {
       </div>
     )
   }
-
+  // console.log("Rendering ApplicationsTab with applications:", applications[0].companyId.title)
   const getStatusColor = (status) => {
     switch(status.toLowerCase()) {
       case 'accepted':
@@ -58,7 +59,7 @@ const ApplicationsTab = ({ applications }) => {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">
-                      {app.companyName || 'Company Name'}
+                      {app.companyId.title || 'Company Name'}
                     </h3>
                     <p className="text-gray-400 text-sm flex items-center">
                       <i className="fas fa-calendar-alt mr-2"></i>

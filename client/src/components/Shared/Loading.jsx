@@ -1,3 +1,4 @@
+import React from 'react'
 const Loading = () => {
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col items-center justify-center z-50">

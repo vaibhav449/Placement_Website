@@ -265,7 +265,7 @@ const applyToCompany = async (req, res) => {
     });
   }
 
-  const { companyId } = req.params  ;
+const { companyId } = req.body;
   const studentId = req.user?.id;
 
   if (!companyId) {
@@ -358,7 +358,7 @@ const getMyApplications = async (req, res) => {
         const studentId = req.user.id; // Assuming user ID comes from authentication middleware
 
         const applications = await Application.find({ userId: studentId })
-            .populate('companyId', 'name description type stipend')
+            .populate('companyId', 'title description ')
             .sort({ createdAt: -1 });
         // Check if applications array is empty (length is 0)
             // If empty, return success with empty array instead of 404 error

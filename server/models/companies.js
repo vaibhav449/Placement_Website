@@ -38,6 +38,15 @@ const companySchema = new mongoose.Schema({
         type: Number,
         required: true,
         default: 0.0
+    },
+    applyLink: {
+        type: String,
+        required: true
+    },
+    isOnCampus: {
+        type: Boolean,
+        required: true,
+        default: false
     }
 });
 

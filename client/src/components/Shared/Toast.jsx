@@ -1,3 +1,4 @@
+import React from 'react'
 const Toast = ({ toasts, onClose }) => {
   const getToastStyles = (type) => {
     switch(type) {
