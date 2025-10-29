@@ -527,15 +527,20 @@ const StudentDashboard = () => {
     )
   }
 
-  const handleApply = async (companyId) => {
-    try {
-      await studentAPI.applyToCompany(companyId)
-      showToast('Applied successfully!', 'success')
-      fetchAllData()
-    } catch (error) {
-      showToast(error.message || 'Application failed', 'error')
-    }
+const handleApply = async (companyId, resumeFile /* a File|Blob or undefined */) => {
+  try {
+    const formData = new FormData();
+    formData.append('companyId', companyId);          // <- include companyId in the form body
+    if (resumeFile) formData.append('resume', resumeFile); // field name MUST be "resume"
+
+    await studentAPI.applyToCompany(formData);
+
+    showToast('Applied successfully!', 'success');
+    fetchAllData();
+  } catch (error) {
+    showToast(error?.response?.data?.message || error.message || 'Application failed', 'error');
   }
+};
 
   const handleTabChange = (tabKey) => {
     // Prevent switching tabs if profile is incomplete

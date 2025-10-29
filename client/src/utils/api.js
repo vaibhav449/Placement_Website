@@ -39,7 +39,7 @@
 // export const authAPI = {
 //   login: (email, password, role) => 
 //     api.post('/auth/login', { email, password, role }),
-    
+
 //   logout: () => {
 //     localStorage.removeItem('token');
 //     localStorage.removeItem('user');
@@ -124,7 +124,7 @@
 // export const authAPI = {
 //   login: (email, password, role) => 
 //     api.post('/auth/login', { email, password, role }),
-    
+
 //   logout: () => {
 //     localStorage.removeItem('token');
 //     localStorage.removeItem('user');
@@ -134,22 +134,22 @@
 // // Student APIs
 // export const studentAPI = {
 //   getProfile: () => api.get('/students/profile'),
-  
+
 //   // Updated to support FormData for file uploads
 //   updateProfile: (formData) => api.put('/students/profile', formData, {
 //     headers: { 'Content-Type': 'multipart/form-data' }
 //   }),
-  
+
 //   completeProfile: (formData) => api.post('/students/profile/complete', formData, {
 //     headers: { 'Content-Type': 'multipart/form-data' }
 //   }),
-  
+
 //   getCompanies: () => api.get('/students/companies'),
-  
+
 //   applyToCompany: (companyId) => api.post('/students/apply', { companyId }),
-  
+
 //   getApplications: () => api.get('/students/applications'),
-  
+
 //   uploadResume: (file) => {
 //     const formData = new FormData();
 //     formData.append('resume', file);
@@ -216,9 +216,9 @@ api.interceptors.response.use(
 
 // Auth APIs
 export const authAPI = {
-  login: (email, password, role) => 
+  login: (email, password, role) =>
     api.post('/auth/login', { email, password, role }),
-    
+
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -231,7 +231,11 @@ export const studentAPI = {
   updateProfile: (data) => api.put('/students/profile', data),
   completeProfile: (formData) => api.post('/students/profile/complete', formData), // removed header override
   getCompanies: () => api.get('/students/companies'),
-  applyToCompany: (companyId) => api.post('/students/apply', { companyId }),
+  // studentAPI.js (axios instance `api`)
+  applyToCompany: ( formData) =>
+    api.post('/students/apply', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   getApplications: () => api.get('/students/applications'),
   uploadResume: (file) => {
     const formData = new FormData();
@@ -250,7 +254,7 @@ export const coordinatorAPI = {
   updateCompany: (id, data) => api.put(`/coordinators/companies/${id}`, data),
   deleteCompany: (id) => api.delete(`/coordinators/companies/${id}`),
   getResumes: () => api.get('/coordinators/resumes'),
-  downloadResumes: (filters) => api.get('/coordinators/resumes/download', { 
+  downloadResumes: (filters) => api.get('/coordinators/resumes/download', {
     params: filters,
     responseType: 'blob'
   }),

@@ -4,7 +4,7 @@ import CompanyCard from './CompanyCard'
 const CompaniesTab = ({ companies, applications, onApply }) => {
   const onCampusCompanies = companies.filter(c => c.companyType === 'on-campus' || !c.companyType)
   const offCampusCompanies = companies.filter(c => c.companyType === 'off-campus')
-
+  console.log('CompaniesTab Rendered', companies, applications);
   return (
     <div className="space-y-8">
       {/* On-Campus Section */}
