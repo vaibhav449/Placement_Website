@@ -27,10 +27,10 @@ if (process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_UPLOADS =
 
 }
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: "https://placement-website-ozbc.vercel.app/" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+  
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
