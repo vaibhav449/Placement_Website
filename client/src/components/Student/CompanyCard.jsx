@@ -5,7 +5,7 @@ const CompanyCard = ({ company, hasApplied, onApply }) => {
   const [resumeFile, setResumeFile] = useState(null)
 
   // Determine campus type label
-  const companyTypeLabel = company.isOnCampus ? '🏢 On-Campus' : '🌐 Off-Campus'
+  const companyTypeLabel = company.type
 
   const handleApplyClick = () => {
     setShowModal(true)

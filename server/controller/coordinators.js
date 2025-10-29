@@ -659,9 +659,10 @@ const downloadFilteredResumesZip = async (req, res) => {
 
       const appFilter = {};
       if (company) appFilter.companyId = company;
-      if (studentIds.length > 0) appFilter.studentId = { $in: studentIds };
-
+      if (studentIds.length > 0) appFilter.userId = { $in: studentIds };
+      console.log('Application filter:', appFilter);
       const applications = await Application.find(appFilter).select('resume');
+      console.log('Found applications:', applications.length);
       for (const app of applications) {
         if (!app.resume) continue;
         const { publicId } = getCloudinaryId(app.resume);
