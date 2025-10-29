@@ -38,5 +38,5 @@ router.get('/resumes/download', require('../controller/coordinators').downloadFi
 // router.put('/promote', makeStudentCoordinator);
 router.get("/students", getAllStudents);
 router.get("/applications", require('../controller/coordinators').getAllApplications);
-router.put('/students/update-password', require('../controller/coordinators').updateStudentPassword);
+router.put('/update-password', require('../controller/coordinators').updateStudentPassword);
 module.exports = router;
