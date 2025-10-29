@@ -951,7 +951,29 @@ const getAllApplications = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch applications' });
     }
 };
-
+const updateStudentPassword = async (req, res) => {
+    try {
+        const { studentId, newPassword } = req.body;
+        // Only coordinator can update student password
+        if (!req.user || req.user.role !== 'coordinator') {
+            return res.status(403).json({ error: 'Only coordinators can update student passwords.' });
+        }
+        if (!studentId || !newPassword) {
+            return res.status(400).json({ error: 'studentId and newPassword are required.' });
+        }
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ error: 'Student not found.' });
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        student.password = hashedPassword;
+        await student.save();
+        return res.status(200).json({ message: 'Student password updated successfully.' });
+    } catch (error) {
+        console.error('Error updating student password:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
 module.exports = {
     registerStudentsFromFile,
     createCompany,
@@ -965,5 +987,6 @@ module.exports = {
     getStats,
     getAllStudents,
     downloadFilteredResumesZip,
-    getAllApplications
+    getAllApplications,
+    updateStudentPassword
 };

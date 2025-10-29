@@ -1,388 +1,6 @@
-// import { useState } from 'react'
-
-// const Students = ({ students, onDelete }) => {
-//   const [batchFilter, setBatchFilter] = useState('all')
-//   const [searchTerm, setSearchTerm] = useState('')
-
-//   const filteredStudents = students.filter(student => {
-//     const year = student.details?.year;
-//     const matchesBatch = batchFilter === 'all' || year === batchFilter;
-//     const matchesSearch =
-//       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       student.email.toLowerCase().includes(searchTerm.toLowerCase());
-//     return matchesBatch && matchesSearch;
-//   })
-
-//   return (
-//     <div className="space-y-6 animate-in fade-in duration-500">
-//       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-//         <div>
-//           <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent mb-2">
-//             Students Management
-//           </h1>
-//           <p className="text-gray-400">Manage student registrations and profiles</p>
-//         </div>
-//       </div>
-
-//       <div className="flex flex-col md:flex-row gap-4">
-//         <div className="flex-1">
-//           <div className="relative">
-//             <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-//             <input
-//               type="text"
-//               placeholder="Search students by name or email..."
-//               value={searchTerm}
-//               onChange={e => setSearchTerm(e.target.value)}
-//               className="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-green-500/50 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
-//             />
-//           </div>
-//         </div>
-//         <select
-//           value={batchFilter}
-//           onChange={e => setBatchFilter(e.target.value)}
-//           className="bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500/50 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
-//         >
-//           <option value="all">All Batches</option>
-//           <option value="2022">2022</option>
-//           <option value="2023">2023</option>
-//           <option value="2024">2024</option>
-//           <option value="2025">2025</option>
-//         </select>
-//       </div>
-
-//       {filteredStudents.length === 0 ? (
-//         <div className="text-center py-20 bg-gray-800/30 rounded-2xl border border-gray-700/50">
-//           <i className="fas fa-users-slash text-6xl text-gray-600 mb-4"></i>
-//           <p className="text-xl text-gray-400">No students found</p>
-//         </div>
-//       ) : (
-//         <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
-//           <div className="overflow-x-auto">
-//             <table className="w-full">
-//               <thead className="bg-gray-800/50">
-//                 <tr>
-//                   {['Name', 'Roll No', 'Email', 'Course', 'Batch', 'Status', 'Actions'].map(header => (
-//                     <th key={header} className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-//                       {header}
-//                     </th>
-//                   ))}
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y divide-gray-700/50">
-//                 {filteredStudents.map(student => (
-//                   <tr key={student._id} className="hover:bg-gray-700/30 transition-colors duration-200">
-//                     <td className="px-6 py-4">
-//                       <div className="flex items-center space-x-3">
-//                         <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-//                           <span className="text-white font-semibold">{student.name.charAt(0)}</span>
-//                         </div>
-//                         <span className="font-medium text-white">{student.name}</span>
-//                       </div>
-//                     </td>
-//                     <td className="px-6 py-4 text-gray-300">{student.details?.rollNo || 'N/A'}</td>
-//                     <td className="px-6 py-4 text-gray-300">{student.email}</td>
-//                     <td className="px-6 py-4 text-gray-300">{student.details?.course || 'N/A'}</td>
-//                     <td className="px-6 py-4">
-//                       <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium">
-//                         {student.details?.year || 'N/A'}
-//                       </span>
-//                     </td>
-//                     <td className="px-6 py-4">
-//                       <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
-//                         {student.status || 'Active'}
-//                       </span>
-//                     </td>
-//                     <td className="px-6 py-4">
-//                       <button
-//                         onClick={() => onDelete(student._id)}
-//                         className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-all duration-200"
-//                         title="Delete Student"
-//                       >
-//                         <i className="fas fa-trash"></i>
-//                       </button>
-//                     </td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   )
-// }
-
-// export default Students
-
-// import { useState } from 'react'
-// import Modal from '../Shared/Modal'
-
-// const Students = ({ students, onDelete }) => {
-//   const [batchFilter, setBatchFilter] = useState('all')
-//   const [searchTerm, setSearchTerm] = useState('')
-//   const [selectedStudent, setSelectedStudent] = useState(null)
-//   const [showProfileModal, setShowProfileModal] = useState(false)
-
-//   const filteredStudents = students.filter(student => {
-//     const year = student.details?.year;
-//     const matchesBatch = batchFilter === 'all' || year === batchFilter;
-//     const matchesSearch =
-//       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       student.email.toLowerCase().includes(searchTerm.toLowerCase());
-//     return matchesBatch && matchesSearch;
-//   })
-
-//   const handleViewProfile = (student) => {
-//     setSelectedStudent(student)
-//     setShowProfileModal(true)
-//   }
-
-//   const handleCloseModal = () => {
-//     setShowProfileModal(false)
-//     setSelectedStudent(null)
-//   }
-
-//   return (
-//     <div className="space-y-6 animate-in fade-in duration-500">
-//       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-//         <div>
-//           <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent mb-2">
-//             Students Management
-//           </h1>
-//           <p className="text-gray-400">Manage student registrations and profiles</p>
-//         </div>
-//       </div>
-
-//       <div className="flex flex-col md:flex-row gap-4">
-//         <div className="flex-1">
-//           <div className="relative">
-//             <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-//             <input
-//               type="text"
-//               placeholder="Search students by name or email..."
-//               value={searchTerm}
-//               onChange={e => setSearchTerm(e.target.value)}
-//               className="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-green-500/50 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
-//             />
-//           </div>
-//         </div>
-//         <select
-//           value={batchFilter}
-//           onChange={e => setBatchFilter(e.target.value)}
-//           className="bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500/50 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
-//         >
-//           <option value="all">All Batches</option>
-//           <option value="2022">2022</option>
-//           <option value="2023">2023</option>
-//           <option value="2024">2024</option>
-//           <option value="2025">2025</option>
-//         </select>
-//       </div>
-
-//       {filteredStudents.length === 0 ? (
-//         <div className="text-center py-20 bg-gray-800/30 rounded-2xl border border-gray-700/50">
-//           <i className="fas fa-users-slash text-6xl text-gray-600 mb-4"></i>
-//           <p className="text-xl text-gray-400">No students found</p>
-//         </div>
-//       ) : (
-//         <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
-//           <div className="overflow-x-auto">
-//             <table className="w-full">
-//               <thead className="bg-gray-800/50">
-//                 <tr>
-//                   {['Name', 'Roll No', 'Email', 'Course', 'Batch', 'Status', 'Actions'].map(header => (
-//                     <th key={header} className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-//                       {header}
-//                     </th>
-//                   ))}
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y divide-gray-700/50">
-//                 {filteredStudents.map(student => (
-//                   <tr key={student._id} className="hover:bg-gray-700/30 transition-colors duration-200">
-//                     <td className="px-6 py-4">
-//                       <div className="flex items-center space-x-3">
-//                         <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-//                           <span className="text-white font-semibold">{student.name.charAt(0)}</span>
-//                         </div>
-//                         <span className="font-medium text-white">{student.name}</span>
-//                       </div>
-//                     </td>
-//                     <td className="px-6 py-4 text-gray-300">{student.details?.rollNo || 'N/A'}</td>
-//                     <td className="px-6 py-4 text-gray-300">{student.email}</td>
-//                     <td className="px-6 py-4 text-gray-300">{student.details?.course || 'N/A'}</td>
-//                     <td className="px-6 py-4">
-//                       <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium">
-//                         {student.details?.year || 'N/A'}
-//                       </span>
-//                     </td>
-//                     <td className="px-6 py-4">
-//                       <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
-//                         {student.status || 'Active'}
-//                       </span>
-//                     </td>
-//                     <td className="px-6 py-4">
-//                       <div className="flex items-center space-x-2">
-//                         <button
-//                           onClick={() => handleViewProfile(student)}
-//                           className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 p-2 rounded-lg transition-all duration-200"
-//                           title="View Profile"
-//                         >
-//                           <i className="fas fa-eye"></i>
-//                         </button>
-//                         <button
-//                           onClick={() => onDelete(student._id)}
-//                           className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-all duration-200"
-//                           title="Delete Student"
-//                         >
-//                           <i className="fas fa-trash"></i>
-//                         </button>
-//                       </div>
-//                     </td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
-
-//       {/* Student Profile Modal */}
-//       {selectedStudent && (
-//         <Modal 
-//           isOpen={showProfileModal} 
-//           onClose={handleCloseModal} 
-//           title={`${selectedStudent.name}'s Profile`}
-//         >
-//           <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-//             {/* Profile Header */}
-//             <div className="bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-teal-500/20 rounded-xl p-6 border border-green-500/30">
-//               <div className="flex items-center space-x-6">
-//                 <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center text-3xl font-bold text-white shadow-2xl">
-//                   {selectedStudent.name.charAt(0)}
-//                 </div>
-//                 <div>
-//                   <h2 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
-//                     {selectedStudent.name}
-//                   </h2>
-//                   <p className="text-gray-400 mt-1">{selectedStudent.email}</p>
-//                 </div>
-//               </div>
-//             </div>
-
-//             {/* Personal Information */}
-//             <div className="bg-gray-700/20 rounded-lg p-4 border border-gray-600/30">
-//               <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-//                 <i className="fas fa-user mr-2 text-blue-400"></i>
-//                 Personal Information
-//               </h3>
-//               <div className="grid grid-cols-2 gap-3">
-//                 <div className="bg-gray-700/30 rounded-lg p-3">
-//                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Full Name</p>
-//                   <p className="text-white font-semibold">{selectedStudent.name}</p>
-//                 </div>
-//                 <div className="bg-gray-700/30 rounded-lg p-3">
-//                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Email</p>
-//                   <p className="text-white font-semibold">{selectedStudent.email}</p>
-//                 </div>
-//               </div>
-//             </div>
-
-//             {/* Academic Information */}
-//             <div className="bg-gray-700/20 rounded-lg p-4 border border-gray-600/30">
-//               <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-//                 <i className="fas fa-graduation-cap mr-2 text-purple-400"></i>
-//                 Academic Information
-//               </h3>
-//               <div className="grid grid-cols-2 gap-3">
-//                 <div className="bg-gray-700/30 rounded-lg p-3">
-//                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Roll Number</p>
-//                   <p className="text-white font-semibold">{selectedStudent.details?.rollNo || 'Not provided'}</p>
-//                 </div>
-//                 <div className="bg-gray-700/30 rounded-lg p-3">
-//                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Semester</p>
-//                   <p className="text-white font-semibold">{selectedStudent.details?.semester || 'Not provided'}</p>
-//                 </div>
-//                 <div className="bg-gray-700/30 rounded-lg p-3">
-//                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Course</p>
-//                   <p className="text-white font-semibold">{selectedStudent.details?.course || 'Not provided'}</p>
-//                 </div>
-//                 <div className="bg-gray-700/30 rounded-lg p-3">
-//                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Branch</p>
-//                   <p className="text-white font-semibold">{selectedStudent.details?.branch || 'Not provided'}</p>
-//                 </div>
-//                 <div className="bg-gray-700/30 rounded-lg p-3">
-//                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Year</p>
-//                   <p className="text-white font-semibold">{selectedStudent.details?.year || 'Not provided'}</p>
-//                 </div>
-//                 <div className="bg-gray-700/30 rounded-lg p-3">
-//                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Graduation Year</p>
-//                   <p className="text-white font-semibold">{selectedStudent.details?.graduationYear || 'Not provided'}</p>
-//                 </div>
-//                 <div className="bg-gray-700/30 rounded-lg p-3">
-//                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">CGPA</p>
-//                   <p className="text-white font-semibold">{selectedStudent.details?.cgpa || 'Not provided'}</p>
-//                 </div>
-//                 <div className="bg-gray-700/30 rounded-lg p-3">
-//                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Active Backlogs</p>
-//                   <p className="text-white font-semibold">
-//                     {selectedStudent.details?.activeBacklogs !== undefined ? selectedStudent.details.activeBacklogs : 'Not provided'}
-//                   </p>
-//                 </div>
-//               </div>
-//             </div>
-
-//             {/* Resume */}
-//             <div className="bg-gray-700/20 rounded-lg p-4 border border-gray-600/30">
-//               <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-//                 <i className="fas fa-file-pdf mr-2 text-orange-400"></i>
-//                 Resume
-//               </h3>
-//               {selectedStudent.defaultResume ? (
-//                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center justify-between">
-//                   <div className="flex items-center space-x-3">
-//                     <i className="fas fa-check-circle text-green-400 text-xl"></i>
-//                     <span className="text-green-400 font-medium">Resume Available</span>
-//                   </div>
-//                   <a
-//                     href={selectedStudent.defaultResume}
-//                     target="_blank"
-//                     rel="noopener noreferrer"
-//                     className="bg-green-500/20 text-green-400 px-4 py-2 rounded-lg hover:bg-green-500/30 transition-all duration-200 flex items-center space-x-2"
-//                   >
-//                     <i className="fas fa-download"></i>
-//                     <span>View Resume</span>
-//                   </a>
-//                 </div>
-//               ) : (
-//                 <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 flex items-center space-x-3">
-//                   <i className="fas fa-times-circle text-red-400 text-xl"></i>
-//                   <span className="text-red-400 font-medium">No resume uploaded</span>
-//                 </div>
-//               )}
-//             </div>
-
-//             {/* Close Button */}
-//             <div className="flex justify-end pt-4">
-//               <button
-//                 onClick={handleCloseModal}
-//                 className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 flex items-center space-x-2"
-//               >
-//                 <i className="fas fa-times"></i>
-//                 <span>Close</span>
-//               </button>
-//             </div>
-//           </div>
-//         </Modal>
-//       )}
-//     </div>
-//   )
-// }
-
-// export default Students
-import React from 'react'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import Modal from '../Shared/Modal'
+import { coordinatorAPI } from '../../utils/api'
 
 const Students = ({ students, onDelete, onRefresh }) => {
   const [batchFilter, setBatchFilter] = useState('all')
@@ -393,6 +11,11 @@ const Students = ({ students, onDelete, onRefresh }) => {
   const [selectedFile, setSelectedFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [uploadResult, setUploadResult] = useState(null)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordStudent, setPasswordStudent] = useState(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [updatingPassword, setUpdatingPassword] = useState(false)
+  const [passwordResult, setPasswordResult] = useState(null)
   
   const filteredStudents = students.filter(student => {
     const year = student.details?.year;
@@ -463,6 +86,38 @@ const Students = ({ students, onDelete, onRefresh }) => {
     setShowUploadModal(false)
     setSelectedFile(null)
     setUploadResult(null)
+  }
+
+  // Open password modal
+  const handleOpenPasswordModal = (student) => {
+    setPasswordStudent(student)
+    setShowPasswordModal(true)
+    setNewPassword('')
+    setPasswordResult(null)
+  }
+
+  // Close password modal
+  const handleClosePasswordModal = () => {
+    setShowPasswordModal(false)
+    setPasswordStudent(null)
+    setNewPassword('')
+    setPasswordResult(null)
+  }
+
+  // Submit password update
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault()
+    if (!newPassword || !passwordStudent) return
+    setUpdatingPassword(true)
+    setPasswordResult(null)
+    try {
+      const data = await coordinatorAPI.updateStudentPassword(passwordStudent._id, newPassword)
+      setPasswordResult({ success: true, message: data.message })
+    } catch (err) {
+      setPasswordResult({ success: false, message: err?.error || 'Failed to update password' })
+    } finally {
+      setUpdatingPassword(false)
+    }
   }
 
   return (
@@ -566,6 +221,13 @@ const Students = ({ students, onDelete, onRefresh }) => {
                           title="Delete Student"
                         >
                           <i className="fas fa-trash"></i>
+                        </button>
+                        <button
+                          onClick={() => handleOpenPasswordModal(student)}
+                          className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 p-2 rounded-lg transition-all duration-200"
+                          title="Update Password"
+                        >
+                          <i className="fas fa-key"></i>
                         </button>
                       </div>
                     </td>
@@ -801,6 +463,53 @@ const Students = ({ students, onDelete, onRefresh }) => {
           </div>
         </div>
       </Modal>
+
+      {/* Password Update Modal */}
+      {passwordStudent && (
+        <Modal
+          isOpen={showPasswordModal}
+          onClose={handleClosePasswordModal}
+          title={`Update Password for ${passwordStudent.name}`}
+        >
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                New Password
+              </label>
+              <input
+                type="text"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                required
+                className="w-full bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white"
+                placeholder="Enter new password"
+              />
+            </div>
+            {passwordResult && (
+              <div className={`p-2 rounded ${passwordResult.success ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                {passwordResult.message}
+              </div>
+            )}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleClosePasswordModal}
+                className="px-4 py-2 border border-gray-600 text-gray-200 rounded-lg hover:bg-gray-700/50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={updatingPassword}
+                className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg flex items-center gap-2"
+              >
+                <i className="fas fa-key"></i>
+                <span>{updatingPassword ? 'Updating...' : 'Update Password'}</span>
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   )
 }
