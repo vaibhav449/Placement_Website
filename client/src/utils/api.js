@@ -267,7 +267,7 @@ export const coordinatorAPI = {
   },
   getAllApplications: () => api.get('/coordinators/applications'),
   updateStudentPassword: (studentId, newPassword) =>
-    api.put('/students/update-password', { studentId, newPassword }),
+    api.put('/coordinators/update-password', { studentId, newPassword }),
 };
 
 export default api;
