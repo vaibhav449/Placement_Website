@@ -27,16 +27,15 @@ if (process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_UPLOADS =
 
 }
 
-app.use(cors({ origin: "https://placement-website-ozbc.vercel.app/" }));
+app.use(cors({ origin: "https://placement-website-ozbc.vercel.app" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-  
+
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
 
-// Start function: connect to DB then mount routes and l
-// isten
+// Start function: connect to DB then mount routes and listen
 const PORT = process.env.PORT || 5000;
 
 async function start() {
