@@ -13,10 +13,18 @@ const bcrypt = require("bcryptjs");
 const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
     // Accept only PDF files (adjust if you want images/docs)
-    if (file.mimetype === 'application/pdf') {
+    const allowedTypes = [
+        'application/pdf',
+        'text/csv',
+        'application/csv',
+        'text/plain', // some CSV uploads may come as text/plain
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Only PDF files are allowed!'), false);
+        cb(new Error('Only PDF, CSV and Excel files are allowed!'), false);
     }
 };
 const upload = multer({

@@ -27,6 +27,7 @@ const getStats = async (req, res) => {
 // Register students from file (CSV or Excel)
 const registerStudentsFromFile = async (req, res) => {
     try {
+        console.log('Received file for student registration:', req.file);
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
@@ -86,7 +87,7 @@ const registerStudentsFromFile = async (req, res) => {
                     rollNo: studentData.rollNo || '',
                     semester: studentData.semester || '',
                     course: studentData.course || '',
-                    graduationYear: studentData.graduationYear ? parseInt(studentData.graduationYear, 10) : null,
+                    graduationYear: studentData.graduationYear ? parseInt(studentData.graduationYear, 10) : null, 
                     cgpa: studentData.cgpa !== undefined && studentData.cgpa !== '' ? parseFloat(studentData.cgpa) : null,
                     activeBacklogs: studentData.activeBacklogs !== undefined && studentData.activeBacklogs !== '' ? parseInt(studentData.activeBacklogs, 10) : null,
                     branch: studentData.branch || '',

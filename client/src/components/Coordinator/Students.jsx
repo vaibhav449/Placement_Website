@@ -60,6 +60,7 @@ const Students = ({ students, onDelete, onRefresh }) => {
     setUploadResult(null)
 
     try {
+      console.log('Uploading file from frontend');
       const { coordinatorAPI } = await import('../../utils/api')
       const result = await coordinatorAPI.registerStudentsFromFile(selectedFile)
       

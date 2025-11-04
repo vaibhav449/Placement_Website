@@ -27,7 +27,7 @@ if (process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_UPLOADS =
 
 }
 
-app.use(cors({ origin: "https://placement-website-ozbc.vercel.app" }));
+app.use(cors({ origin: "*" }));//https://placement-website-ozbc.vercel.app
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
