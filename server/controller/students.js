@@ -140,9 +140,9 @@ const getUserProfile = async (req, res) => {
 
 // Update student profile
 const updateProfile = async (req, res) => {
-    let tempPath;
     try {
         const userId = req.user.id;
+        // Fields come from multipart/form-data (FormData)
         const {
             name,
             rollNo,
@@ -154,8 +154,7 @@ const updateProfile = async (req, res) => {
             cgpa,
             activeBacklogs,
             oldPassword,
-            newPassword,
-            confirmPassword
+            newPassword
         } = req.body;
 
         const student = await Student.findById(userId);
@@ -163,52 +162,27 @@ const updateProfile = async (req, res) => {
             return res.status(404).json({ success: false, message: "Student not found" });
         }
 
-        // Password change flow (optional)
-        if (oldPassword || newPassword || confirmPassword) {
-            if (!oldPassword || !newPassword || !confirmPassword) {
-                return res.status(400).json({
-                    success: false,
-                    message: "To change password provide oldPassword, newPassword and confirmPassword."
-                });
-            }
-            if (newPassword !== confirmPassword) {
-                return res.status(400).json({
-                    success: false,
-                    message: "New password and confirm password do not match."
-                });
-            }
-            const isMatch = await bcrypt.compare(oldPassword, student.password);
-            if (!isMatch) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Old password is incorrect."
-                });
-            }
-            const salt = await bcrypt.genSalt(10);
-            student.password = await bcrypt.hash(newPassword, salt);
-        }
-
         // Ensure details object exists
         student.details = student.details || {};
 
-        // Update basic profile fields if provided
-        if (name) student.name = name;
-        if (rollNo !== undefined) student.details.rollNo = rollNo;
-        if (semester !== undefined) student.details.semester = semester;
-        if (course !== undefined) student.details.course = course;
-        if (branch !== undefined) student.details.branch = branch;
-        if (year !== undefined) student.details.year = year;
-        if (graduationYear !== undefined) student.details.graduationYear = graduationYear;
+        // Update basic fields if provided
+        if (typeof name !== 'undefined' && name !== '') student.name = name;
+        if (typeof rollNo !== 'undefined' && rollNo !== '') student.details.rollNo = rollNo;
+        if (typeof semester !== 'undefined' && semester !== '') student.details.semester = semester;
+        if (typeof course !== 'undefined' && course !== '') student.details.course = course;
+        if (typeof branch !== 'undefined' && branch !== '') student.details.branch = branch;
+        if (typeof year !== 'undefined' && year !== '') student.details.year = year;
+        if (typeof graduationYear !== 'undefined' && graduationYear !== '') student.details.graduationYear = graduationYear;
 
-        // Numeric fields
-        if (cgpa !== undefined && cgpa !== '') {
+        // Numeric fields parsing & validation
+        if (typeof cgpa !== 'undefined' && cgpa !== '') {
             const parsedCgpa = parseFloat(cgpa);
             if (isNaN(parsedCgpa)) {
                 return res.status(400).json({ success: false, message: "Invalid CGPA value." });
             }
             student.details.cgpa = parsedCgpa;
         }
-        if (activeBacklogs !== undefined && activeBacklogs !== '') {
+        if (typeof activeBacklogs !== 'undefined' && activeBacklogs !== '') {
             const parsedBacklogs = parseInt(activeBacklogs, 10);
             if (isNaN(parsedBacklogs)) {
                 return res.status(400).json({ success: false, message: "Invalid activeBacklogs value." });
@@ -216,33 +190,55 @@ const updateProfile = async (req, res) => {
             student.details.activeBacklogs = parsedBacklogs;
         }
 
-        // Handle resume upload (memory buffer)
-        if (req.file && req.file.buffer) {
-            console.log('Uploading resume:', req.file.originalname, 'mimetype=', req.file.mimetype, 'size=', req.file.buffer.length);
+        // Optional password change (frontend sends oldPassword + newPassword)
+        if (oldPassword || newPassword) {
+            if (!oldPassword || !newPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Both oldPassword and newPassword are required to change password."
+                });
+            }
+            const isMatch = await bcrypt.compare(oldPassword, student.password);
+            if (!isMatch) {
+                return res.status(400).json({ success: false, message: "Old password is incorrect." });
+            }
+            const salt = await bcrypt.genSalt(10);
+            student.password = await bcrypt.hash(newPassword, salt);
+        }
 
-            // Delete previous resume from Cloudinary if present
+        // Handle uploaded resume (field name: 'resume')
+        if (req.file && (req.file.buffer || req.file.path)) {
+            console.log('Uploading resume:', req.file.originalname, 'mimetype=', req.file.mimetype);
+
+            // Delete previous resume from Cloudinary if exists
             if (student.defaultResume) {
                 const { publicId, resourceType } = getCloudinaryId(student.defaultResume);
                 if (publicId) {
                     try {
                         await cloudinary.uploader.destroy(publicId, { resource_type: resourceType || 'raw' });
                     } catch (e) {
-                        // ignore deletion errors
+                        console.warn('Failed to delete previous resume from Cloudinary', e);
                     }
                 }
             }
 
-            const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
-                folder: 'placement/resumes',
-                resource_type: 'raw'
-            });
+            let uploadResult;
+            if (req.file.buffer) {
+                uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
+                    folder: 'placement/resumes',
+                    resource_type: 'raw'
+                });
+            } else {
+                uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                    folder: 'placement/resumes',
+                    resource_type: 'raw'
+                });
+            }
             student.defaultResume = uploadResult.secure_url;
         }
 
-        // Recompute profile completion and always save (allow partial updates)
-        const isProfileCompleted = checkProfileCompletion(student);
-        student.profileIsCompleted = isProfileCompleted;
-
+        // Recompute profile completion and save
+        student.profileIsCompleted = checkProfileCompletion(student);
         await student.save();
 
         res.status(200).json({
@@ -254,13 +250,12 @@ const updateProfile = async (req, res) => {
                     name: student.name,
                     email: student.email,
                     role: student.role,
-                    isProfileCompleted: isProfileCompleted,
+                    isProfileCompleted: student.profileIsCompleted,
                     details: student.details,
                     defaultResume: student.defaultResume || null
                 }
             }
         });
-
     } catch (error) {
         console.error("Error updating profile:", error);
         res.status(500).json({
@@ -268,8 +263,6 @@ const updateProfile = async (req, res) => {
             message: "Internal server error",
             error: error.message
         });
-    } finally {
-        // no disk temp to cleanup when using memoryStorage
     }
 };
 
