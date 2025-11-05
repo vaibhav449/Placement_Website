@@ -73,13 +73,24 @@ const generateToken = (userId, role, isProfileCompleted) => {
 
 // Helper function to check if profile is completed
 const checkProfileCompletion = (student) => {
-    const { details, defaultResume } = student;
-    return !!(
-        details?.rollNo &&
-        details?.semester &&
-        details?.course &&
-        details?.graduationYear &&
-        defaultResume
+    if (!student) return false;
+    const details = student.details || {};
+
+    const hasCgpa = typeof details.cgpa === 'number' && !isNaN(details.cgpa);
+    const hasActiveBacklogs = typeof details.activeBacklogs === 'number' && !isNaN(details.activeBacklogs);
+
+    return Boolean(
+        student.name &&
+        student.email &&
+        student.password &&
+        student.role &&
+        details.rollNo &&
+        details.semester &&
+        details.course &&
+        details.graduationYear &&
+        hasCgpa &&
+        hasActiveBacklogs &&
+        student.defaultResume
     );
 };
 
@@ -131,73 +142,108 @@ const getUserProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
     let tempPath;
     try {
-        console.log("function call toh ho rha hain:", req.file);
         const userId = req.user.id;
-        const { name, rollNo, semester, course, graduationYear, oldPassword, newPassword } = req.body;
+        const {
+            name,
+            rollNo,
+            semester,
+            course,
+            branch,
+            year,
+            graduationYear,
+            cgpa,
+            activeBacklogs,
+            oldPassword,
+            newPassword,
+            confirmPassword
+        } = req.body;
 
         const student = await Student.findById(userId);
         if (!student) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found"
-            });
+            return res.status(404).json({ success: false, message: "Student not found" });
         }
 
-        // Update password if requested
-        if (oldPassword && newPassword) {
+        // Password change flow (optional)
+        if (oldPassword || newPassword || confirmPassword) {
+            if (!oldPassword || !newPassword || !confirmPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: "To change password provide oldPassword, newPassword and confirmPassword."
+                });
+            }
+            if (newPassword !== confirmPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: "New password and confirm password do not match."
+                });
+            }
             const isMatch = await bcrypt.compare(oldPassword, student.password);
             if (!isMatch) {
                 return res.status(400).json({
                     success: false,
-                    message: "Old password is incorrect"
+                    message: "Old password is incorrect."
                 });
             }
             const salt = await bcrypt.genSalt(10);
             student.password = await bcrypt.hash(newPassword, salt);
         }
 
-        // Update fields
+        // Ensure details object exists
+        student.details = student.details || {};
+
+        // Update basic profile fields if provided
         if (name) student.name = name;
         if (rollNo !== undefined) student.details.rollNo = rollNo;
         if (semester !== undefined) student.details.semester = semester;
         if (course !== undefined) student.details.course = course;
+        if (branch !== undefined) student.details.branch = branch;
+        if (year !== undefined) student.details.year = year;
         if (graduationYear !== undefined) student.details.graduationYear = graduationYear;
 
-        // Handle resume upload if file provided (memory buffer)
+        // Numeric fields
+        if (cgpa !== undefined && cgpa !== '') {
+            const parsedCgpa = parseFloat(cgpa);
+            if (isNaN(parsedCgpa)) {
+                return res.status(400).json({ success: false, message: "Invalid CGPA value." });
+            }
+            student.details.cgpa = parsedCgpa;
+        }
+        if (activeBacklogs !== undefined && activeBacklogs !== '') {
+            const parsedBacklogs = parseInt(activeBacklogs, 10);
+            if (isNaN(parsedBacklogs)) {
+                return res.status(400).json({ success: false, message: "Invalid activeBacklogs value." });
+            }
+            student.details.activeBacklogs = parsedBacklogs;
+        }
+
+        // Handle resume upload (memory buffer)
         if (req.file && req.file.buffer) {
-            console.log('uploading resume:', req.file.originalname, 'size=', req.file.buffer.length, 'mimetype=', req.file.mimetype);
-            // Delete previous resume from Cloudinary if exists
+            console.log('Uploading resume:', req.file.originalname, 'mimetype=', req.file.mimetype, 'size=', req.file.buffer.length);
+
+            // Delete previous resume from Cloudinary if present
             if (student.defaultResume) {
                 const { publicId, resourceType } = getCloudinaryId(student.defaultResume);
                 if (publicId) {
                     try {
                         await cloudinary.uploader.destroy(publicId, { resource_type: resourceType || 'raw' });
-                    } catch {
-                        // ignore
+                    } catch (e) {
+                        // ignore deletion errors
                     }
                 }
             }
-            console.log("Uploading new resume to Cloudinary", req.file);
+
             const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
                 folder: 'placement/resumes',
                 resource_type: 'raw'
             });
-            console.log("Resume uploaded to Cloudinary:", uploadResult.secure_url);
             student.defaultResume = uploadResult.secure_url;
         }
 
-        // Check profile completion after update
+        // Recompute profile completion and always save (allow partial updates)
         const isProfileCompleted = checkProfileCompletion(student);
         student.profileIsCompleted = isProfileCompleted;
 
-        if (student.profileIsCompleted) {
-            await student.save();
-        } else {
-            return res.status(400).json({
-                success: false,
-                message: "Please fill all the required fields to complete your profile"
-            });
-        }
+        await student.save();
 
         res.status(200).json({
             success: true,
@@ -210,7 +256,7 @@ const updateProfile = async (req, res) => {
                     role: student.role,
                     isProfileCompleted: isProfileCompleted,
                     details: student.details,
-                    defaultResume: student.defaultResume
+                    defaultResume: student.defaultResume || null
                 }
             }
         });
