@@ -280,11 +280,14 @@ const getAllCompanies = async (req, res) => {
 
     try {
         const companies = await Company.find({});
-
+        console.log("Fetched companies in getAllCompanies:", companies);
+        
+        // Return success with empty array if no companies exist
         if (!companies || companies.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "No companies are visiting right now"
+            return res.status(200).json({
+                success: true,
+                message: "No companies are visiting right now",
+                data: []
             });
         }
 

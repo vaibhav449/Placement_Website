@@ -497,7 +497,8 @@ const StudentDashboard = () => {
         studentAPI.getCompanies(),  
         studentAPI.getApplications()
       ])
-      console.log("Fetched profile data in dashboard:", applicationsData.data)
+      // console.log("Fetched profile data in dashboard:", applicationsData.data)
+      console.log("Fetched companies data in dashboard:", companiesData.data)
       setUserProfile(profileData.data.user)
       setCompanies(companiesData.data || [])
       setApplications(applicationsData.data || [])
