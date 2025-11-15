@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 const CompanyCard = ({ company, hasApplied, onApply }) => {
   const [showModal, setShowModal] = useState(false)
   const [resumeFile, setResumeFile] = useState(null)
-
+  console.log('CompanyCard Rendered', company);
   // Determine campus type label
   const companyTypeLabel = company.type
 
@@ -64,7 +64,7 @@ const CompanyCard = ({ company, hasApplied, onApply }) => {
         <div className="flex flex-wrap items-center justify-between text-sm gap-2">
           <div className="flex items-center space-x-2 text-gray-400">
             <i className="fas fa-map-marker-alt text-blue-400"></i>
-            <span>{company.type || 'Not specified'}</span>
+            <span>{company.role || 'Not specified'}</span>
           </div>
           {company.package && (
             <div className="flex items-center space-x-2 text-green-400 font-semibold">
@@ -107,7 +107,7 @@ const CompanyCard = ({ company, hasApplied, onApply }) => {
 
       {/* Card Footer */}
       <div className="p-4 pt-0 flex flex-col gap-2">
-        <a
+        {/* <a
           href={company.applyLink}
           target="_blank"
           rel="noopener noreferrer"
@@ -115,7 +115,7 @@ const CompanyCard = ({ company, hasApplied, onApply }) => {
         >
           <i className="fas fa-link mr-2"></i>
           Apply Link
-        </a>
+        </a> */}
         <button
           onClick={handleApplyClick}
           disabled={hasApplied}
