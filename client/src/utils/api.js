@@ -179,7 +179,7 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = "http://localhost:5000/api"; //https://placement-website-kappa.vercel.app/api
+const API_BASE_URL = "https://placement-website-kappa.vercel.app/api"; //https://placement-website-kappa.vercel.app/api
 
 //http://localhost:5000/api
 
